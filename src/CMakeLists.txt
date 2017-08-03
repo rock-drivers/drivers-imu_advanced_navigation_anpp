@@ -1,7 +1,7 @@
-rock_library(drivers-advanced_navigation_anpp
-    SOURCES Dummy.cpp
-    HEADERS Dummy.hpp)
+rock_library(advanced_navigation_anpp
+    SOURCES Protocol.cpp
+    HEADERS Protocol.hpp)
 
-rock_executable(drivers-advanced_navigation_anpp_bin Main.cpp
-    DEPS drivers-advanced_navigation_anpp)
+rock_executable(advanced_navigation_anpp_bin Main.cpp
+    DEPS advanced_navigation_anpp)
 
