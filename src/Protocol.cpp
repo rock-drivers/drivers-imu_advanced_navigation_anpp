@@ -1,6 +1,7 @@
 #include <advanced_navigation_anpp/Protocol.hpp>
 #include <boost/crc.hpp>
 #include <cstddef>
+#include <stdexcept>
 
 using namespace std;
 using namespace advanced_navigation_anpp;
@@ -48,5 +49,39 @@ bool Header::isPacketValid(uint8_t const* begin, uint8_t const* end) const
         return false;
     uint16_t checksum = protocol::crc(begin, end);
     return (payload_checksum_lsb == (checksum & 0xFF)) && (payload_checksum_msb == ((checksum >> 8) & 0xFF));
+}
+
+bool Acknowledge::isMatching(Header const& header) const
+{
+    return acked_packet_id == header.packet_id &&
+        acked_payload_checksum_lsb == header.payload_checksum_lsb &&
+        acked_payload_checksum_msb == header.payload_checksum_msb;
+}
+
+bool Acknowledge::isSuccess() const
+{
+    return result == ACK_SUCCESS;
+}
+
+bool Acknowledge::isPacketValidationFailure() const
+{
+    return result == ACK_FAILED_PACKET_VALIDATION_CRC ||
+        result == ACK_FAILED_PACKET_VALIDATION_SIZE;
+}
+
+bool Acknowledge::isProtocolError() const
+{
+    return result == ACK_FAILED_OUT_OF_RANGE ||
+        result == ACK_FAILED_UNKNOWN_PACKET;
+}
+
+bool Acknowledge::isSystemError() const
+{
+    return result == ACK_FAILED_SYSTEM_FLASH_FAILURE;
+}
+
+bool Acknowledge::isNotReady() const
+{
+    return result == ACK_FAILED_SYSTEM_NOT_READY;
 }
 
