@@ -340,7 +340,757 @@ TEST(protocol_SystemState, unmarshal)
     expected.lat_lon_z_stddev[2] = TEST_FP4[15].fp;
     RAW_SET(marshalled + 96, TEST_FP4[15].binary );
 
-    SystemState unmarshalled = SystemState::unmarshal(marshalled, marshalled + 50);
+    SystemState unmarshalled = SystemState::unmarshal(marshalled, marshalled + 100);
     ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(SystemState)));
+}
+
+TEST(protocol_SystemState, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(SystemState::unmarshal(ptr, ptr + 99), std::length_error);
+}
+
+TEST(protocol_SystemState, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(SystemState::unmarshal(ptr, ptr + 101), std::length_error);
+}
+
+TEST(protocol_UnixTime, unmarshal)
+{
+    uint8_t marshalled[100];
+    UnixTime expected;
+    expected.seconds = 0x08070605;
+    RAW_SET(marshalled,  { 0x05, 0x06, 0x07, 0x08 } );
+    expected.microseconds = 0x0c0b0a09;
+    RAW_SET(marshalled + 4,  { 0x09, 0x0a, 0x0b, 0x0c } );
+    UnixTime unmarshalled = UnixTime::unmarshal(marshalled, marshalled + 8);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(UnixTime)));
+}
+
+TEST(protocol_UnixTime, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(UnixTime::unmarshal(ptr, ptr + 7), std::length_error);
+}
+
+TEST(protocol_UnixTime, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(UnixTime::unmarshal(ptr, ptr + 9), std::length_error);
+}
+
+TEST(protocol_Status, unmarshal)
+{
+    uint8_t marshalled[100];
+    Status expected;
+    expected.system_status = 0x0201;
+    RAW_SET(marshalled,      { 0x01, 0x02 } );
+    expected.filter_status = 0x0403;
+    RAW_SET(marshalled + 2,  { 0x03, 0x04 } );
+    Status unmarshalled = Status::unmarshal(marshalled, marshalled + 4);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(Status)));
+}
+
+TEST(protocol_Status, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(Status::unmarshal(ptr, ptr + 3), std::length_error);
+}
+
+TEST(protocol_Status, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(Status::unmarshal(ptr, ptr + 5), std::length_error);
+}
+
+TEST(protocol_GeodeticPositionStandardDeviation, unmarshal)
+{
+    uint8_t marshalled[100];
+    GeodeticPositionStandardDeviation expected;
+    expected.lat_lon_z_stddev[0] = TEST_FP4[13].fp;
+    RAW_SET(marshalled + 0, TEST_FP4[13].binary );
+    expected.lat_lon_z_stddev[1] = TEST_FP4[14].fp;
+    RAW_SET(marshalled + 4, TEST_FP4[14].binary );
+    expected.lat_lon_z_stddev[2] = TEST_FP4[15].fp;
+    RAW_SET(marshalled + 8, TEST_FP4[15].binary );
+    GeodeticPositionStandardDeviation unmarshalled =
+        GeodeticPositionStandardDeviation::unmarshal(marshalled, marshalled + 12);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(GeodeticPositionStandardDeviation)));
+}
+
+TEST(protocol_GeodeticPositionStandardDeviation, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(GeodeticPositionStandardDeviation::unmarshal(ptr, ptr + 11), std::length_error);
+}
+
+TEST(protocol_GeodeticPositionStandardDeviation, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(GeodeticPositionStandardDeviation::unmarshal(ptr, ptr + 13), std::length_error);
+}
+
+TEST(protocol_NEDVelocityStandardDeviation, unmarshal)
+{
+    uint8_t marshalled[100];
+    NEDVelocityStandardDeviation expected;
+    expected.ned[0] = TEST_FP4[0].fp;
+    RAW_SET(marshalled + 0, TEST_FP4[0].binary );
+    expected.ned[1] = TEST_FP4[1].fp;
+    RAW_SET(marshalled + 4, TEST_FP4[1].binary );
+    expected.ned[2] = TEST_FP4[2].fp;
+    RAW_SET(marshalled + 8, TEST_FP4[2].binary );
+    NEDVelocityStandardDeviation unmarshalled =
+        NEDVelocityStandardDeviation::unmarshal(marshalled, marshalled + 12);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(NEDVelocityStandardDeviation)));
+}
+
+TEST(protocol_NEDVelocityStandardDeviation, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(NEDVelocityStandardDeviation::unmarshal(ptr, ptr + 11), std::length_error);
+}
+
+TEST(protocol_NEDVelocityStandardDeviation, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(NEDVelocityStandardDeviation::unmarshal(ptr, ptr + 13), std::length_error);
+}
+
+TEST(protocol_EulerOrientationStandardDeviation, unmarshal)
+{
+    uint8_t marshalled[100];
+    EulerOrientationStandardDeviation expected;
+    expected.rpy[0] = TEST_FP4[0].fp;
+    RAW_SET(marshalled + 0, TEST_FP4[0].binary );
+    expected.rpy[1] = TEST_FP4[1].fp;
+    RAW_SET(marshalled + 4, TEST_FP4[1].binary );
+    expected.rpy[2] = TEST_FP4[2].fp;
+    RAW_SET(marshalled + 8, TEST_FP4[2].binary );
+    EulerOrientationStandardDeviation unmarshalled =
+        EulerOrientationStandardDeviation::unmarshal(marshalled, marshalled + 12);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(EulerOrientationStandardDeviation)));
+}
+
+TEST(protocol_EulerOrientationStandardDeviation, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(EulerOrientationStandardDeviation::unmarshal(ptr, ptr + 11), std::length_error);
+}
+
+TEST(protocol_EulerOrientationStandardDeviation, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(EulerOrientationStandardDeviation::unmarshal(ptr, ptr + 13), std::length_error);
+}
+
+TEST(protocol_RawSensors, unmarshal)
+{
+    uint8_t marshalled[100];
+    RawSensors expected;
+    expected.accelerometers_xyz[0] = TEST_FP4[0].fp;
+    RAW_SET(marshalled + 0, TEST_FP4[0].binary );
+    expected.accelerometers_xyz[1] = TEST_FP4[1].fp;
+    RAW_SET(marshalled + 4, TEST_FP4[1].binary );
+    expected.accelerometers_xyz[2] = TEST_FP4[2].fp;
+    RAW_SET(marshalled + 8, TEST_FP4[2].binary );
+    expected.gyroscope_xyz[0] = TEST_FP4[3].fp;
+    RAW_SET(marshalled + 12, TEST_FP4[3].binary );
+    expected.gyroscope_xyz[1] = TEST_FP4[4].fp;
+    RAW_SET(marshalled + 16, TEST_FP4[4].binary );
+    expected.gyroscope_xyz[2] = TEST_FP4[5].fp;
+    RAW_SET(marshalled + 20, TEST_FP4[5].binary );
+    expected.magnetometer_xyz[0] = TEST_FP4[6].fp;
+    RAW_SET(marshalled + 24, TEST_FP4[6].binary );
+    expected.magnetometer_xyz[1] = TEST_FP4[7].fp;
+    RAW_SET(marshalled + 28, TEST_FP4[7].binary );
+    expected.magnetometer_xyz[2] = TEST_FP4[8].fp;
+    RAW_SET(marshalled + 32, TEST_FP4[8].binary );
+    expected.imu_temperature_C = TEST_FP4[9].fp;
+    RAW_SET(marshalled + 36, TEST_FP4[9].binary );
+    expected.pressure = TEST_FP4[10].fp;
+    RAW_SET(marshalled + 40, TEST_FP4[10].binary );
+    expected.pressure_temperature_C = TEST_FP4[11].fp;
+    RAW_SET(marshalled + 44, TEST_FP4[11].binary );
+
+    RawSensors unmarshalled =
+        RawSensors::unmarshal(marshalled, marshalled + 48);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(RawSensors)));
+}
+
+TEST(protocol_RawSensors, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(RawSensors::unmarshal(ptr, ptr + 47), std::length_error);
+}
+
+TEST(protocol_RawSensors, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(RawSensors::unmarshal(ptr, ptr + 49), std::length_error);
+}
+
+static_assert(sizeof(RawGNSS) == RawGNSS::SIZE, "SIZE and sizeof() do not agree");
+
+TEST(protocol_RawGNSS, unmarshal)
+{
+    uint8_t marshalled[RawGNSS::SIZE];
+    RawGNSS expected;
+    expected.unix_time_seconds = 0x08070605;
+    expected.unix_time_microseconds = 0x0c0b0a09;
+    expected.lat_lon_z[0]           = TEST_FP8[0].fp;
+    expected.lat_lon_z[1]           = TEST_FP8[1].fp;
+    expected.lat_lon_z[2]           = TEST_FP8[2].fp;
+    expected.velocity_ned[0]        = TEST_FP4[0].fp;
+    expected.velocity_ned[1]        = TEST_FP4[1].fp;
+    expected.velocity_ned[2]        = TEST_FP4[2].fp;
+    expected.lat_lon_z_stddev[0]    = TEST_FP4[3].fp;
+    expected.lat_lon_z_stddev[1]    = TEST_FP4[4].fp;
+    expected.lat_lon_z_stddev[2]    = TEST_FP4[5].fp;
+    expected.pitch                  = TEST_FP4[6].fp;
+    expected.yaw                    = TEST_FP4[7].fp;
+    expected.pitch_stddev           = TEST_FP4[8].fp;
+    expected.yaw_stddev             = TEST_FP4[9].fp;
+    expected.status                 = 0x0201;
+
+    RAW_SET(marshalled + 0,  { 0x05, 0x06, 0x07, 0x08 } );
+    RAW_SET(marshalled + 4,  { 0x09, 0x0a, 0x0b, 0x0c } );
+    RAW_SET(marshalled + 8,  TEST_FP8[0].binary);
+    RAW_SET(marshalled + 16, TEST_FP8[1].binary);
+    RAW_SET(marshalled + 24, TEST_FP8[2].binary);
+    RAW_SET(marshalled + 32, TEST_FP4[0].binary);
+    RAW_SET(marshalled + 36, TEST_FP4[1].binary);
+    RAW_SET(marshalled + 40, TEST_FP4[2].binary);
+    RAW_SET(marshalled + 44, TEST_FP4[3].binary);
+    RAW_SET(marshalled + 48, TEST_FP4[4].binary);
+    RAW_SET(marshalled + 52, TEST_FP4[5].binary);
+    RAW_SET(marshalled + 56, TEST_FP4[6].binary);
+    RAW_SET(marshalled + 60, TEST_FP4[7].binary);
+    RAW_SET(marshalled + 64, TEST_FP4[8].binary);
+    RAW_SET(marshalled + 68, TEST_FP4[9].binary);
+    RAW_SET(marshalled + 72, { 0x01, 0x02 });
+
+    RawGNSS unmarshalled =
+        RawGNSS::unmarshal(marshalled, marshalled + RawGNSS::SIZE);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(RawGNSS)));
+}
+
+TEST(protocol_RawGNSS, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(RawGNSS::unmarshal(ptr, ptr + RawGNSS::SIZE - 1), std::length_error);
+}
+
+TEST(protocol_RawGNSS, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(RawGNSS::unmarshal(ptr, ptr + RawGNSS::SIZE + 1), std::length_error);
+}
+
+static_assert(sizeof(Satellites) == Satellites::SIZE, "SIZE and sizeof() do not agree");
+
+TEST(protocol_Satellites, unmarshal)
+{
+    uint8_t marshalled[Satellites::SIZE];
+    Satellites expected;
+    expected.hdop = TEST_FP4[0].fp;
+    expected.vdop = TEST_FP4[1].fp;
+    expected.gps_satellite_count     = 0;
+    expected.glonass_satellite_count = 1;
+    expected.beidou_satellite_count  = 2;
+    expected.galileo_satellite_count = 3;
+    expected.sbas_satellite_count    = 4;
+
+    RAW_SET(marshalled + 0,  TEST_FP4[0].binary );
+    RAW_SET(marshalled + 4,  TEST_FP4[1].binary );
+    marshalled[8] = 0;
+    marshalled[9] = 1;
+    marshalled[10] = 2;
+    marshalled[11] = 3;
+    marshalled[12] = 4;
+
+    Satellites unmarshalled =
+        Satellites::unmarshal(marshalled, marshalled + Satellites::SIZE);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(Satellites)));
+}
+
+TEST(protocol_Satellites, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(Satellites::unmarshal(ptr, ptr + Satellites::SIZE - 1), std::length_error);
+}
+
+TEST(protocol_Satellites, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(Satellites::unmarshal(ptr, ptr + Satellites::SIZE + 1), std::length_error);
+}
+
+static_assert(sizeof(SatelliteInfo) == SatelliteInfo::SIZE, "SIZE and sizeof() do not agree");
+
+TEST(protocol_DetailedSatellites, unmarshal)
+{
+    uint8_t marshalled[2 * SatelliteInfo::SIZE];
+    std::vector<SatelliteInfo> expected {
+        { 0x1, 0x2, 0x3, 0x4, 0x0102, 0x5 },
+        { 0x6, 0x7, 0x8, 0x9, 0x0304, 0xa }
+    };
+
+    marshalled[0] = 0x1;
+    marshalled[1] = 0x2;
+    marshalled[2] = 0x3;
+    marshalled[3] = 0x4;
+    RAW_SET(marshalled + 4,  { 0x02, 0x01 } );
+    marshalled[6] = 0x5;
+
+    marshalled[7] = 0x6;
+    marshalled[8] = 0x7;
+    marshalled[9] = 0x8;
+    marshalled[10] = 0x9;
+    RAW_SET(marshalled + 11,  { 0x04, 0x03 } );
+    marshalled[13] = 0xa;
+
+    std::vector<SatelliteInfo> unmarshalled;
+    DetailedSatellites::unmarshal(marshalled, marshalled + 2 * SatelliteInfo::SIZE, unmarshalled);
+    ASSERT_EQ(2, unmarshalled.size());
+    ASSERT_FALSE(std::memcmp(expected.data(), unmarshalled.data(), 2 * SatelliteInfo::SIZE));
+}
+
+TEST(protocol_DetailedSatellites, unmarshals_an_empty_array)
+{
+    uint8_t* ptr = nullptr;
+    std::vector<SatelliteInfo> unmarshalled;
+    DetailedSatellites::unmarshal(ptr, ptr, unmarshalled);
+    ASSERT_TRUE(unmarshalled.empty());
+}
+
+TEST(protocol_DetailedSatellites, unmarshal_throws_if_given_an_amount_of_data_that_is_not_a_multiple_of_7)
+{
+    uint8_t* ptr = nullptr;
+    std::vector<SatelliteInfo> unmarshalled;
+    ASSERT_THROW(DetailedSatellites::unmarshal(ptr, ptr + 2 * SatelliteInfo::SIZE - 1, unmarshalled), std::length_error);
+}
+
+TEST(protocol_DetailedSatellites, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    std::vector<SatelliteInfo> unmarshalled;
+    ASSERT_THROW(DetailedSatellites::unmarshal(ptr, ptr + 2 * SatelliteInfo::SIZE + 1, unmarshalled), std::length_error);
+}
+
+static_assert(sizeof(NEDVelocity) == NEDVelocity::SIZE, "SIZE and sizeof() do not agree");
+
+TEST(protocol_NEDVelocity, unmarshal)
+{
+    uint8_t marshalled[NEDVelocity::SIZE];
+    NEDVelocity expected;
+    expected.ned[0] = TEST_FP4[0].fp;
+    expected.ned[1] = TEST_FP4[1].fp;
+    expected.ned[2] = TEST_FP4[2].fp;
+
+    RAW_SET(marshalled + 0,  TEST_FP4[0].binary );
+    RAW_SET(marshalled + 4,  TEST_FP4[1].binary );
+    RAW_SET(marshalled + 8,  TEST_FP4[2].binary );
+
+    NEDVelocity unmarshalled =
+        NEDVelocity::unmarshal(marshalled, marshalled + NEDVelocity::SIZE);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(NEDVelocity)));
+}
+
+TEST(protocol_NEDVelocity, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(NEDVelocity::unmarshal(ptr, ptr + NEDVelocity::SIZE - 1), std::length_error);
+}
+
+TEST(protocol_NEDVelocity, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(NEDVelocity::unmarshal(ptr, ptr + NEDVelocity::SIZE + 1), std::length_error);
+}
+
+static_assert(sizeof(BodyVelocity) == BodyVelocity::SIZE, "SIZE and sizeof() do not agree");
+
+TEST(protocol_BodyVelocity, unmarshal)
+{
+    uint8_t marshalled[BodyVelocity::SIZE];
+    BodyVelocity expected;
+    expected.xyz[0] = TEST_FP4[0].fp;
+    expected.xyz[1] = TEST_FP4[1].fp;
+    expected.xyz[2] = TEST_FP4[2].fp;
+
+    RAW_SET(marshalled + 0,  TEST_FP4[0].binary );
+    RAW_SET(marshalled + 4,  TEST_FP4[1].binary );
+    RAW_SET(marshalled + 8,  TEST_FP4[2].binary );
+
+    BodyVelocity unmarshalled =
+        BodyVelocity::unmarshal(marshalled, marshalled + BodyVelocity::SIZE);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(BodyVelocity)));
+}
+
+TEST(protocol_BodyVelocity, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(BodyVelocity::unmarshal(ptr, ptr + BodyVelocity::SIZE - 1), std::length_error);
+}
+
+TEST(protocol_BodyVelocity, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(BodyVelocity::unmarshal(ptr, ptr + BodyVelocity::SIZE + 1), std::length_error);
+}
+
+static_assert(sizeof(Acceleration) == Acceleration::SIZE, "SIZE and sizeof() do not agree");
+
+TEST(protocol_Acceleration, unmarshal)
+{
+    uint8_t marshalled[Acceleration::SIZE];
+    Acceleration expected;
+    expected.xyz[0] = TEST_FP4[0].fp;
+    expected.xyz[1] = TEST_FP4[1].fp;
+    expected.xyz[2] = TEST_FP4[2].fp;
+
+    RAW_SET(marshalled + 0,  TEST_FP4[0].binary );
+    RAW_SET(marshalled + 4,  TEST_FP4[1].binary );
+    RAW_SET(marshalled + 8,  TEST_FP4[2].binary );
+
+    Acceleration unmarshalled =
+        Acceleration::unmarshal(marshalled, marshalled + Acceleration::SIZE);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(Acceleration)));
+}
+
+TEST(protocol_Acceleration, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(Acceleration::unmarshal(ptr, ptr + Acceleration::SIZE - 1), std::length_error);
+}
+
+TEST(protocol_Acceleration, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(Acceleration::unmarshal(ptr, ptr + Acceleration::SIZE + 1), std::length_error);
+}
+
+static_assert(sizeof(BodyAcceleration) == BodyAcceleration::SIZE, "SIZE and sizeof() do not agree");
+
+TEST(protocol_BodyAcceleration, unmarshal)
+{
+    uint8_t marshalled[BodyAcceleration::SIZE];
+    BodyAcceleration expected;
+    expected.xyz[0] = TEST_FP4[0].fp;
+    expected.xyz[1] = TEST_FP4[1].fp;
+    expected.xyz[2] = TEST_FP4[2].fp;
+    expected.g      = TEST_FP4[3].fp;
+
+    RAW_SET(marshalled + 0,  TEST_FP4[0].binary );
+    RAW_SET(marshalled + 4,  TEST_FP4[1].binary );
+    RAW_SET(marshalled + 8,  TEST_FP4[2].binary );
+    RAW_SET(marshalled + 12,  TEST_FP4[3].binary );
+
+    BodyAcceleration unmarshalled =
+        BodyAcceleration::unmarshal(marshalled, marshalled + BodyAcceleration::SIZE);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(BodyAcceleration)));
+}
+
+TEST(protocol_BodyAcceleration, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(BodyAcceleration::unmarshal(ptr, ptr + BodyAcceleration::SIZE - 1), std::length_error);
+}
+
+TEST(protocol_BodyAcceleration, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(BodyAcceleration::unmarshal(ptr, ptr + BodyAcceleration::SIZE + 1), std::length_error);
+}
+
+static_assert(sizeof(QuaternionOrientation) == QuaternionOrientation::SIZE, "SIZE and sizeof() do not agree");
+
+TEST(protocol_QuaternionOrientation, unmarshal)
+{
+    uint8_t marshalled[QuaternionOrientation::SIZE];
+    QuaternionOrientation expected;
+    expected.im     = TEST_FP4[0].fp;
+    expected.xyz[0] = TEST_FP4[1].fp;
+    expected.xyz[1] = TEST_FP4[2].fp;
+    expected.xyz[2] = TEST_FP4[3].fp;
+
+    RAW_SET(marshalled + 0,  TEST_FP4[0].binary );
+    RAW_SET(marshalled + 4,  TEST_FP4[1].binary );
+    RAW_SET(marshalled + 8,  TEST_FP4[2].binary );
+    RAW_SET(marshalled + 12,  TEST_FP4[3].binary );
+
+    QuaternionOrientation unmarshalled =
+        QuaternionOrientation::unmarshal(marshalled, marshalled + QuaternionOrientation::SIZE);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(QuaternionOrientation)));
+}
+
+TEST(protocol_QuaternionOrientation, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(QuaternionOrientation::unmarshal(ptr, ptr + QuaternionOrientation::SIZE - 1), std::length_error);
+}
+
+TEST(protocol_QuaternionOrientation, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(QuaternionOrientation::unmarshal(ptr, ptr + QuaternionOrientation::SIZE + 1), std::length_error);
+}
+
+static_assert(sizeof(AngularVelocity) == AngularVelocity::SIZE, "SIZE and sizeof() do not agree");
+
+TEST(protocol_AngularVelocity, unmarshal)
+{
+    uint8_t marshalled[AngularVelocity::SIZE];
+    AngularVelocity expected;
+    expected.xyz[0] = TEST_FP4[0].fp;
+    expected.xyz[1] = TEST_FP4[1].fp;
+    expected.xyz[2] = TEST_FP4[2].fp;
+
+    RAW_SET(marshalled + 0,  TEST_FP4[0].binary );
+    RAW_SET(marshalled + 4,  TEST_FP4[1].binary );
+    RAW_SET(marshalled + 8,  TEST_FP4[2].binary );
+
+    AngularVelocity unmarshalled =
+        AngularVelocity::unmarshal(marshalled, marshalled + AngularVelocity::SIZE);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(AngularVelocity)));
+}
+
+TEST(protocol_AngularVelocity, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(AngularVelocity::unmarshal(ptr, ptr + AngularVelocity::SIZE - 1), std::length_error);
+}
+
+TEST(protocol_AngularVelocity, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(AngularVelocity::unmarshal(ptr, ptr + AngularVelocity::SIZE + 1), std::length_error);
+}
+
+
+static_assert(sizeof(AngularAcceleration) == AngularAcceleration::SIZE, "SIZE and sizeof() do not agree");
+
+TEST(protocol_AngularAcceleration, unmarshal)
+{
+    uint8_t marshalled[AngularAcceleration::SIZE];
+    AngularAcceleration expected;
+    expected.xyz[0] = TEST_FP4[0].fp;
+    expected.xyz[1] = TEST_FP4[1].fp;
+    expected.xyz[2] = TEST_FP4[2].fp;
+
+    RAW_SET(marshalled + 0,  TEST_FP4[0].binary );
+    RAW_SET(marshalled + 4,  TEST_FP4[1].binary );
+    RAW_SET(marshalled + 8,  TEST_FP4[2].binary );
+
+    AngularAcceleration unmarshalled =
+        AngularAcceleration::unmarshal(marshalled, marshalled + AngularAcceleration::SIZE);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(AngularAcceleration)));
+}
+
+TEST(protocol_AngularAcceleration, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(AngularAcceleration::unmarshal(ptr, ptr + AngularAcceleration::SIZE - 1), std::length_error);
+}
+
+TEST(protocol_AngularAcceleration, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(AngularAcceleration::unmarshal(ptr, ptr + AngularAcceleration::SIZE + 1), std::length_error);
+}
+
+static_assert(sizeof(LocalMagneticField) == LocalMagneticField::SIZE, "SIZE and sizeof() do not agree");
+
+TEST(protocol_LocalMagneticField, unmarshal)
+{
+    uint8_t marshalled[LocalMagneticField::SIZE];
+    LocalMagneticField expected;
+    expected.xyz[0] = TEST_FP4[0].fp;
+    expected.xyz[1] = TEST_FP4[1].fp;
+    expected.xyz[2] = TEST_FP4[2].fp;
+
+    RAW_SET(marshalled + 0,  TEST_FP4[0].binary );
+    RAW_SET(marshalled + 4,  TEST_FP4[1].binary );
+    RAW_SET(marshalled + 8,  TEST_FP4[2].binary );
+
+    LocalMagneticField unmarshalled =
+        LocalMagneticField::unmarshal(marshalled, marshalled + LocalMagneticField::SIZE);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(LocalMagneticField)));
+}
+
+TEST(protocol_LocalMagneticField, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(LocalMagneticField::unmarshal(ptr, ptr + LocalMagneticField::SIZE - 1), std::length_error);
+}
+
+TEST(protocol_LocalMagneticField, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(LocalMagneticField::unmarshal(ptr, ptr + LocalMagneticField::SIZE + 1), std::length_error);
+}
+
+static_assert(sizeof(PacketPeriods) == PacketPeriods::MIN_SIZE, "MIN_SIZE and sizeof() do not agree");
+
+TEST(protocol_PacketPeriods, marshal)
+{
+    uint8_t marshalled[PacketPeriods::MIN_SIZE + PacketPeriods::PERIOD_SIZE * 2];
+    uint8_t expected[] = {
+        0x1, 0x1,
+        0x1, 0x1, 0x2, 0x3, 0x4,
+        0x2, 0x5, 0x6, 0x7, 0x8
+    };
+
+    PacketPeriods data;
+    data.permanent = 1;
+    data.clear_existing = 1;
+    PacketPeriods::Periods periods {
+        { 1, 0x04030201 },
+        { 2, 0x08070605 }
+    };
+
+    auto out = data.marshal(marshalled, periods.begin(), periods.end());
+    ASSERT_EQ(out, marshalled + PacketPeriods::MIN_SIZE + PacketPeriods::PERIOD_SIZE * 2);
+    ASSERT_FALSE(std::memcmp(expected, marshalled, sizeof(marshalled)));
+}
+
+TEST(protocol_PacketPeriods, unmarshal)
+{
+    constexpr int PACKET_SIZE = PacketPeriods::MIN_SIZE + PacketPeriods::PERIOD_SIZE * 2;
+    uint8_t marshalled[PACKET_SIZE] = {
+        0x1, 0x1,
+        0x1, 0x1, 0x2, 0x3, 0x4,
+        0x2, 0x5, 0x6, 0x7, 0x8
+    };
+
+    PacketPeriods::Periods periods {
+        { 1, 0x04030201 },
+        { 2, 0x08070605 }
+    };
+
+    auto unmarshalled = PacketPeriods::unmarshal(marshalled, marshalled + PACKET_SIZE);
+    ASSERT_EQ(2, unmarshalled.size());
+    ASSERT_EQ(*periods.begin(), *unmarshalled.begin());
+    ASSERT_EQ(*periods.rbegin(), *unmarshalled.rbegin());
+}
+
+TEST(protocol_PacketPeriods, unmarshal_throws_if_too_little_data_is_given)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(PacketPeriods::unmarshal(ptr, ptr + PacketPeriods::MIN_SIZE - 1), std::length_error);
+}
+
+TEST(protocol_PacketPeriods, unmarshal_throws_if_the_buffer_size_is_not_an_integral_number_of_periods)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(PacketPeriods::unmarshal(ptr, ptr + PacketPeriods::MIN_SIZE - PacketPeriods::PERIOD_SIZE - 1), std::length_error);
+}
+
+static_assert(sizeof(BaudRates) == BaudRates::SIZE, "sizeof and SIZE do not agree");
+
+TEST(protocol_BaudRates, marshal)
+{
+    BaudRates data;
+    data.permanent = 1;
+    data.primary_port = 0x04030201;
+    data.gpio = 0x08070605;
+    data.auxiliary_rs232 = 0x0c0b0a09;
+    uint8_t expected[] = { 1, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0, 0, 0, 0 };
+
+    uint8_t marshalled[BaudRates::SIZE];
+    auto out = data.marshal(marshalled);
+    ASSERT_EQ(out, marshalled + BaudRates::SIZE);
+    ASSERT_FALSE(std::memcmp(expected, marshalled, BaudRates::SIZE));
+}
+
+TEST(protocol_BaudRates, unmarshal)
+{
+    uint8_t marshalled[] =
+    { 1, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0, 0, 0, 0 };
+
+    BaudRates expected;
+    expected.permanent = 0;
+    expected.primary_port = 0x04030201;
+    expected.gpio = 0x08070605;
+    expected.auxiliary_rs232 = 0x0c0b0a09;
+    expected.reserved = 0;
+
+    BaudRates actual = BaudRates::unmarshal(marshalled, marshalled + BaudRates::SIZE);
+    ASSERT_FALSE(std::memcmp(&actual, &expected, BaudRates::SIZE));
+}
+
+TEST(protocol_BaudRates, unmarshal_fails_if_too_little_data_is_provided_and_does_not_access_any_of_it)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(BaudRates::unmarshal(ptr, ptr + BaudRates::SIZE - 1), std::length_error);
+}
+
+TEST(protocol_BaudRates, unmarshal_fails_if_too_much_data_is_provided_and_does_not_access_any_of_it)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(BaudRates::unmarshal(ptr, ptr + BaudRates::SIZE + 1), std::length_error);
+}
+
+
+static_assert(sizeof(Alignment) == Alignment::SIZE, "sizeof and SIZE do not agree");
+
+TEST(protocol_Alignment, marshal)
+{
+    Alignment data;
+    data.permanent = 1;
+    for (int i = 0; i < 9; ++i)
+        data.dcm[i] = TEST_FP4[i].fp;
+    for (int i = 0; i < 3; ++i)
+    {
+        data.gnss_antenna_offset_xyz[i]  = TEST_FP4[9 + i].fp;
+        data.odometer_offset_xyz[i]      = TEST_FP4[i].fp;
+        data.external_data_offset_xyz[i] = TEST_FP4[3 + i].fp;
+    }
+
+    uint8_t expected[Alignment::SIZE];
+    expected[0] = 1;
+    for (int i = 0; i < 18; ++i)
+        RAW_SET(expected + 1 + i * 4, TEST_FP4[i % 12].binary);
+
+    uint8_t marshalled[Alignment::SIZE];
+    auto out = data.marshal(marshalled);
+    ASSERT_EQ(out, marshalled + Alignment::SIZE);
+    ASSERT_FALSE(std::memcmp(expected, marshalled, Alignment::SIZE));
+}
+
+TEST(protocol_Alignment, unmarshal)
+{
+    Alignment expected;
+    expected.permanent = 0;
+    for (int i = 0; i < 9; ++i)
+        expected.dcm[i] = TEST_FP4[i].fp;
+    for (int i = 0; i < 3; ++i)
+    {
+        expected.gnss_antenna_offset_xyz[i]  = TEST_FP4[9 + i].fp;
+        expected.odometer_offset_xyz[i]      = TEST_FP4[i].fp;
+        expected.external_data_offset_xyz[i] = TEST_FP4[3 + i].fp;
+    }
+
+    uint8_t marshalled[Alignment::SIZE];
+    marshalled[0] = 1;
+    for (int i = 0; i < 18; ++i)
+        RAW_SET(marshalled + 1 + i * 4, TEST_FP4[i % 12].binary);
+
+    Alignment out = Alignment::unmarshal(marshalled, marshalled + Alignment::SIZE);
+    ASSERT_FALSE(std::memcmp(&expected, &out, Alignment::SIZE));
+}
+
+TEST(protocol_Alignment, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(Alignment::unmarshal(ptr, ptr + Alignment::SIZE - 1), std::length_error);
+}
+
+TEST(protocol_Alignment, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(Alignment::unmarshal(ptr, ptr + Alignment::SIZE + 1), std::length_error);
 }
 

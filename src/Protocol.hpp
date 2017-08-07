@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <algorithm>
 #include <stdexcept>
+#include <cstring>
+#include <map>
 #include <type_traits>
 
 namespace advanced_navigation_anpp
@@ -25,6 +27,7 @@ namespace advanced_navigation_anpp
         template<typename T, typename InputIterator>
         inline T read16(InputIterator it)
         {
+            static_assert(sizeof(T) == 2, "return type is not a 2-byte data type");
             uint16_t b0 = *it;
             uint16_t b1 = *(++it);
             uint16_t r = b0 | b1 << 8;
@@ -35,6 +38,7 @@ namespace advanced_navigation_anpp
         template<typename T, typename InputIterator>
         inline T read32(InputIterator it)
         {
+            static_assert(sizeof(T) == 4, "return type is not a 4-byte data type");
             uint32_t b0 = *it;
             uint32_t b1 = *(++it);
             uint32_t b2 = *(++it);
@@ -47,6 +51,7 @@ namespace advanced_navigation_anpp
         template<typename T, typename InputIterator>
         inline T read64(InputIterator it)
         {
+            static_assert(sizeof(T) == 8, "return type is not a 8-byte data type");
             uint64_t b0 = *it;
             uint64_t b1 = *(++it);
             uint64_t b2 = *(++it);
@@ -57,6 +62,43 @@ namespace advanced_navigation_anpp
             uint64_t b7 = *(++it);
             uint64_t r = b0 | b1 << 8 | b2 << 16 | b3 << 24 | b4 << 32 | b5 << 40 | b6 << 48 | b7 << 56;
             return reinterpret_cast<T const&>(r);
+        }
+
+        /** Helper function to write a 16 bit value into a byte stream */
+        template<typename T, typename Out>
+        inline void write16(Out out, T sample)
+        {
+            static_assert(sizeof(T) == 2, "sample is not a 2-byte data type");
+            uint16_t value = reinterpret_cast<uint16_t&>(sample);
+            out[0] = value & 0xFF;
+            out[1] = (value >> 8) & 0xFF;
+        }
+
+        /** Helper function to read a 64 bit value from a byte stream */
+        template<typename T, typename Out>
+        inline void write32(Out out, T sample)
+        {
+            static_assert(sizeof(T) == 4, "sample is not a 4-byte data type");
+            uint32_t value = reinterpret_cast<uint32_t&>(sample);
+            out[0] = (value >> 0) & 0xFF;
+            out[1] = (value >> 8) & 0xFF;
+            out[2] = (value >> 16) & 0xFF;
+            out[3] = (value >> 24) & 0xFF;
+        }
+
+        /** Helper function to read a 32 bit value from a byte stream */
+        template<typename T, typename Out>
+        inline void write64(Out out, T sample)
+        {
+            static_assert(sizeof(T) == 8, "sample is not a 8-byte data type");
+            uint64_t value = reinterpret_cast<uint64_t&>(sample);
+            out[1] = (value >> 8) & 0xFF;
+            out[2] = (value >> 16) & 0xFF;
+            out[3] = (value >> 24) & 0xFF;
+            out[4] = (value >> 32) & 0xFF;
+            out[5] = (value >> 40) & 0xFF;
+            out[6] = (value >> 48) & 0xFF;
+            out[7] = (value >> 56) & 0xFF;
         }
 
         /** ID of packets in the protocol */
@@ -348,7 +390,7 @@ namespace advanced_navigation_anpp
             FILTER_HEADING_INITIALIZED          = 0x0004,
             FILTER_UTC_INITIALIZED              = 0x0008,
 
-            FILTER_GNSS_STATUS_MASK             = 0x0070,
+            FILTER_GNSS_FIX_STATUS_MASK         = 0x0070,
             FILTER_GNSS_NO_FIX                  = 0x0000,
             FILTER_GNSS_2D                      = 0x0010,
             FILTER_GNSS_3D                      = 0x0020,
@@ -388,6 +430,9 @@ namespace advanced_navigation_anpp
             template<typename InputIterator>
             static SystemState unmarshal(InputIterator begin, InputIterator end)
             {
+                if (end - begin != sizeof(SystemState))
+                    throw std::length_error("SystemState::unmarshal buffer size not the expected size");
+
                 SystemState state;
                 state.system_status            = read16<uint16_t>(begin);
                 state.filter_status            = read16<uint16_t>(begin + 2);
@@ -413,6 +458,579 @@ namespace advanced_navigation_anpp
                 state.lat_lon_z_stddev[1]      = read32<float>(begin + 92);
                 state.lat_lon_z_stddev[2]      = read32<float>(begin + 96);
                 return state;
+            }
+        } __attribute__((packed));
+
+        struct UnixTime
+        {
+            uint32_t seconds;
+            uint32_t microseconds;
+
+            template<typename InputIterator>
+            static UnixTime unmarshal(InputIterator begin, InputIterator end)
+            {
+                if (end - begin != sizeof(UnixTime))
+                    throw std::length_error("SystemState::unmarshal buffer size not the expected size");
+                return UnixTime{read32<uint32_t>(begin), read32<uint32_t>(begin + 4)};
+            }
+        } __attribute__((packed));
+
+        struct Status
+        {
+            /** Bitfield of SYSTEM_STATUS */
+            uint16_t system_status;
+            /** Bitfield of FILTER_STATUS */
+            uint16_t filter_status;
+
+            template<typename InputIterator>
+            static Status unmarshal(InputIterator begin, InputIterator end)
+            {
+                if (end - begin != sizeof(Status))
+                    throw std::length_error("SystemState::unmarshal buffer size not the expected size");
+                return Status{read16<uint16_t>(begin), read16<uint16_t>(begin + 2)};
+            }
+        } __attribute__((packed));
+
+        struct GeodeticPositionStandardDeviation
+        {
+            float   lat_lon_z_stddev[3];
+
+            template<typename InputIterator>
+            static GeodeticPositionStandardDeviation unmarshal(InputIterator begin, InputIterator end)
+            {
+                if (end - begin != sizeof(GeodeticPositionStandardDeviation))
+                    throw std::length_error("SystemState::unmarshal buffer size not the expected size");
+                return GeodeticPositionStandardDeviation {
+                    read32<float>(begin + 0),
+                    read32<float>(begin + 4),
+                    read32<float>(begin + 8)
+                };
+            }
+        } __attribute__((packed));
+
+        struct NEDVelocityStandardDeviation
+        {
+            float ned[3];
+
+            template<typename InputIterator>
+            static NEDVelocityStandardDeviation unmarshal(InputIterator begin, InputIterator end)
+            {
+                if (end - begin != sizeof(NEDVelocityStandardDeviation))
+                    throw std::length_error("NEDVelocityStandardDeviation::unmarshal buffer size not the expected size");
+                return NEDVelocityStandardDeviation {
+                    read32<float>(begin + 0),
+                    read32<float>(begin + 4),
+                    read32<float>(begin + 8)
+                };
+            }
+        } __attribute__((packed));
+
+        struct EulerOrientationStandardDeviation
+        {
+            float rpy[3];
+
+            template<typename InputIterator>
+            static EulerOrientationStandardDeviation unmarshal(InputIterator begin, InputIterator end)
+            {
+                if (end - begin != sizeof(EulerOrientationStandardDeviation))
+                    throw std::length_error("EulerOrientationStandardDeviation::unmarshal buffer size not the expected size");
+                return EulerOrientationStandardDeviation {
+                    read32<float>(begin + 0),
+                    read32<float>(begin + 4),
+                    read32<float>(begin + 8)
+                };
+            }
+        } __attribute__((packed));
+
+        struct RawSensors
+        {
+            float accelerometers_xyz[3];
+            float gyroscope_xyz[3];
+            float magnetometer_xyz[3];
+            float imu_temperature_C;
+            float pressure;
+            float pressure_temperature_C;
+
+            template<typename InputIterator>
+            static RawSensors unmarshal(InputIterator begin, InputIterator end)
+            {
+                if (end - begin != sizeof(RawSensors))
+                    throw std::length_error("RawSensors::unmarshal buffer size not the expected size");
+
+                return RawSensors {
+                    read32<float>(begin + 0),
+                    read32<float>(begin + 4),
+                    read32<float>(begin + 8),
+                    read32<float>(begin + 12),
+                    read32<float>(begin + 16),
+                    read32<float>(begin + 20),
+                    read32<float>(begin + 24),
+                    read32<float>(begin + 28),
+                    read32<float>(begin + 32),
+                    read32<float>(begin + 36),
+                    read32<float>(begin + 40),
+                    read32<float>(begin + 44)
+                };
+            }
+        } __attribute__((packed));
+
+        struct RawGNSS
+        {
+            static constexpr int ID   = 29;
+            static constexpr int SIZE = 74;
+
+            uint32_t unix_time_seconds;
+            uint32_t unix_time_microseconds;
+            double   lat_lon_z[3];
+            float    velocity_ned[3];
+            float    lat_lon_z_stddev[3];
+            float    pitch;
+            float    yaw;
+            float    pitch_stddev;
+            float    yaw_stddev;
+            /** Bitfield described by RAW_GNSS_STATUS */
+            uint16_t status;
+
+            template<typename InputIterator>
+            static RawGNSS unmarshal(InputIterator begin, InputIterator end)
+            {
+                if (end - begin != SIZE)
+                    throw std::length_error("RawGNSS::unmarshal buffer size not the expected size");
+
+                return RawGNSS {
+                    read32<uint32_t>(begin + 0),
+                    read32<uint32_t>(begin + 4),
+                    read64<double>(begin + 8),
+                    read64<double>(begin + 16),
+                    read64<double>(begin + 24),
+                    read32<float>(begin + 32),
+                    read32<float>(begin + 36),
+                    read32<float>(begin + 40),
+                    read32<float>(begin + 44),
+                    read32<float>(begin + 48),
+                    read32<float>(begin + 52),
+                    read32<float>(begin + 56),
+                    read32<float>(begin + 60),
+                    read32<float>(begin + 64),
+                    read32<float>(begin + 68),
+                    read16<uint16_t>(begin + 72)
+                };
+            }
+        } __attribute__((packed));
+
+        enum RAW_GNSS_STATUS
+        {
+            RAW_GNSS_FIX_STATUS_MASK                = 0x07,
+            RAW_GNSS_NO_FIX                         = 0x00,
+            RAW_GNSS_2D                             = 0x01,
+            RAW_GNSS_3D                             = 0x02,
+            RAW_GNSS_SBAS                           = 0x03,
+            RAW_GNSS_DGPS                           = 0x04,
+            RAW_GNSS_OMNISTAR                       = 0x05,
+            RAW_GNSS_RTK_FLOAT                      = 0x06,
+            RAW_GNSS_RTK_FIXED                      = 0x07,
+
+            RAW_GNSS_HAS_DOPPLER_VELOCITY           = 0x08,
+            RAW_GNSS_HAS_TIME                       = 0x10,
+            RAW_GNSS_EXTERNAL                       = 0x20,
+            RAW_GNSS_HAS_TILT                       = 0x40,
+            RAW_GNSS_HAS_HEADING                    = 0x80,
+            RAW_GNSS_HAS_FLOATING_AMBIGUITY_HEADING = 0x100
+        };
+
+        struct Satellites
+        {
+            static constexpr int ID   = 30;
+            static constexpr int SIZE = 13;
+
+            float hdop;
+            float vdop;
+            uint8_t gps_satellite_count;
+            uint8_t glonass_satellite_count;
+            uint8_t beidou_satellite_count;
+            uint8_t galileo_satellite_count;
+            uint8_t sbas_satellite_count;
+
+            template<typename InputIterator>
+            static Satellites unmarshal(InputIterator begin, InputIterator end)
+            {
+                if (end - begin != SIZE)
+                    throw std::length_error("Satellites::unmarshal buffer size not the expected size");
+
+                return Satellites {
+                    read32<float>(begin + 0),
+                    read32<float>(begin + 4),
+                    begin[8],
+                    begin[9],
+                    begin[10],
+                    begin[11],
+                    begin[12]
+                };
+            }
+        } __attribute__((packed));
+
+        enum SATELLITE_SYSTEM
+        {
+            SATELLITE_SYSTEM_UNKNOWN,
+            SATELLITE_SYSTEM_GPS,
+            SATELLITE_SYSTEM_GLONASS,
+            SATELLITE_SYSTEM_BEIDOU,
+            SATELLITE_SYSTEM_GALILEO,
+            SATELLITE_SYSTEM_SBAS,
+            SATELLITE_SYSTEM_QZSS,
+            SATELLITE_SYSTEM_STARFIRE,
+            SATELLITE_SYSTEM_OMNISTAR
+        };
+
+        /** Bitfield values to represent supported frequencies */
+        enum SATELLITE_FREQUENCIES
+        {
+            SATELLITE_FREQUENCY_L1CA = 0x01,
+            SATELLITE_FREQUENCY_L1C  = 0x02,
+            SATELLITE_FREQUENCY_L1P  = 0x04,
+            SATELLITE_FREQUENCY_L1M  = 0x08,
+            SATELLITE_FREQUENCY_L2C  = 0x10,
+            SATELLITE_FREQUENCY_L2P  = 0x20,
+            SATELLITE_FREQUENCY_L2M  = 0x40,
+            SATELLITE_FREQUENCY_L5   = 0x80
+        };
+
+        /** Satellite info as returned by DetailedSatellites */
+        struct SatelliteInfo
+        {
+            static constexpr int SIZE = 7;
+
+            /** The satellite system as represented by SATELLITE_SYSTEM */
+            uint8_t system;
+            /** The satellite ID number */
+            uint8_t prn;
+            /** Satellite frequencies
+             *
+             * Bitfield represented by the SATELLITE_FREQUENCIES enum
+             */
+            uint8_t frequencies;
+            /** Elevation in degrees */
+            uint8_t elevation;
+            /** Azimuth in degrees */
+            uint16_t azimuth;
+            /** Signal to noise ratio in dB */
+            uint8_t snr;
+
+            template<typename InputIterator>
+            static SatelliteInfo unmarshal(InputIterator begin, InputIterator end)
+            {
+                return SatelliteInfo{
+                    begin[0], begin[1], begin[2], begin[3],
+                    read16<uint16_t>(begin + 4), begin[6]
+                };
+            }
+        } __attribute__((packed));
+
+        struct DetailedSatellites
+        {
+            static constexpr int ID = 31;
+
+            template<typename InputIterator>
+            static void unmarshal(InputIterator begin, InputIterator end, std::vector<SatelliteInfo>& info)
+            {
+                if ((end - begin) % SatelliteInfo::SIZE != 0)
+                    throw std::length_error("Satellites::unmarshal buffer is not a multiple of the SatelliteInfo size");
+
+                for (; begin != end; begin += SatelliteInfo::SIZE)
+                {
+                    info.push_back(SatelliteInfo::unmarshal(begin, begin + SatelliteInfo::SIZE));
+                }
+            }
+        } __attribute__((packed));
+
+        struct NEDVelocity
+        {
+            static constexpr int ID = 35;
+            static constexpr int SIZE = 12;
+
+            float ned[3];
+
+            template<typename InputIterator>
+            static NEDVelocity unmarshal(InputIterator begin, InputIterator end)
+            {
+                if ((end - begin) != SIZE)
+                    throw std::length_error("NEDVelocity::unmarshal buffer is not of the expected size");
+
+                return NEDVelocity { {
+                    read32<float>(begin),
+                    read32<float>(begin + 4),
+                    read32<float>(begin + 8) } };
+            }
+        } __attribute__((packed));
+
+        struct BodyVelocity
+        {
+            static constexpr int ID = 36;
+            static constexpr int SIZE = 12;
+
+            float xyz[3];
+
+            template<typename InputIterator>
+            static BodyVelocity unmarshal(InputIterator begin, InputIterator end)
+            {
+                if ((end - begin) != SIZE)
+                    throw std::length_error("BodyVelocity::unmarshal buffer is not of the expected size");
+
+                return BodyVelocity { {
+                    read32<float>(begin),
+                    read32<float>(begin + 4),
+                    read32<float>(begin + 8) } };
+            }
+        } __attribute__((packed));
+
+        /** Acceleration with the G force removed */
+        struct Acceleration
+        {
+            static constexpr int ID = 37;
+            static constexpr int SIZE = 12;
+
+            float xyz[3];
+
+            template<typename InputIterator>
+            static Acceleration unmarshal(InputIterator begin, InputIterator end)
+            {
+                if ((end - begin) != SIZE)
+                    throw std::length_error("Acceleration::unmarshal buffer is not of the expected size");
+
+                return Acceleration { {
+                    read32<float>(begin),
+                    read32<float>(begin + 4),
+                    read32<float>(begin + 8) } };
+            }
+        } __attribute__((packed));
+
+        struct BodyAcceleration
+        {
+            static constexpr int ID = 38;
+            static constexpr int SIZE = 16;
+
+            float xyz[3];
+            float g;
+
+            template<typename InputIterator>
+            static BodyAcceleration unmarshal(InputIterator begin, InputIterator end)
+            {
+                if ((end - begin) != SIZE)
+                    throw std::length_error("BodyAcceleration::unmarshal buffer is not of the expected size");
+
+                return BodyAcceleration {
+                    {
+                        read32<float>(begin),
+                        read32<float>(begin + 4),
+                        read32<float>(begin + 8)
+                    },
+                    read32<float>(begin + 12)
+                };
+            }
+        } __attribute__((packed));
+
+        struct QuaternionOrientation
+        {
+            static constexpr int ID = 40;
+            static constexpr int SIZE = 16;
+
+            float im;
+            float xyz[3];
+
+            template<typename InputIterator>
+            static QuaternionOrientation unmarshal(InputIterator begin, InputIterator end)
+            {
+                if ((end - begin) != SIZE)
+                    throw std::length_error("QuaternionOrientation::unmarshal buffer is not of the expected size");
+
+                return QuaternionOrientation {
+                    read32<float>(begin + 0),
+                    {
+                        read32<float>(begin + 4),
+                        read32<float>(begin + 8),
+                        read32<float>(begin + 12)
+                    }
+                };
+            }
+        } __attribute__((packed));
+
+        struct AngularVelocity
+        {
+            static constexpr int ID = 42;
+            static constexpr int SIZE = 12;
+
+            float xyz[3];
+
+            template<typename InputIterator>
+            static AngularVelocity unmarshal(InputIterator begin, InputIterator end)
+            {
+                if ((end - begin) != SIZE)
+                    throw std::length_error("AngularVelocity::unmarshal buffer is not of the expected size");
+
+                return AngularVelocity { {
+                    read32<float>(begin),
+                    read32<float>(begin + 4),
+                    read32<float>(begin + 8) } };
+            }
+        } __attribute__((packed));
+
+        struct AngularAcceleration
+        {
+            static constexpr int ID = 43;
+            static constexpr int SIZE = 12;
+
+            float xyz[3];
+
+            template<typename InputIterator>
+            static AngularAcceleration unmarshal(InputIterator begin, InputIterator end)
+            {
+                if ((end - begin) != SIZE)
+                    throw std::length_error("AngularAcceleration::unmarshal buffer is not of the expected size");
+
+                return AngularAcceleration { {
+                    read32<float>(begin),
+                    read32<float>(begin + 4),
+                    read32<float>(begin + 8) } };
+            }
+        } __attribute__((packed));
+
+        struct LocalMagneticField
+        {
+            static constexpr int ID = 50;
+            static constexpr int SIZE = 12;
+
+            float xyz[3];
+
+            template<typename InputIterator>
+            static LocalMagneticField unmarshal(InputIterator begin, InputIterator end)
+            {
+                if ((end - begin) != SIZE)
+                    throw std::length_error("LocalMagneticField::unmarshal buffer is not of the expected size");
+
+                return LocalMagneticField { {
+                    read32<float>(begin),
+                    read32<float>(begin + 4),
+                    read32<float>(begin + 8) } };
+            }
+        } __attribute__((packed));
+
+        struct PacketPeriods
+        {
+            static constexpr int MIN_SIZE = 2;
+            static constexpr int PERIOD_SIZE = 5;
+
+            typedef std::map<uint8_t, uint32_t> Periods;
+
+            uint8_t permanent;
+            uint8_t clear_existing;
+
+            template<typename OutputIterator, typename InputIterator>
+            OutputIterator marshal(OutputIterator out, InputIterator begin, InputIterator end)
+            {
+                out[0] = permanent;
+                out[1] = clear_existing;
+                for (out += 2; begin != end; ++begin, out += PERIOD_SIZE)
+                {
+                    out[0] = begin->first;
+                    write32(out + 1, begin->second);
+                }
+                return out;
+            }
+
+            template<typename InputIterator>
+            static std::map<uint8_t, uint32_t> unmarshal(InputIterator begin, InputIterator end)
+            {
+                if ((end - begin) < MIN_SIZE)
+                    throw std::length_error("PacketPeriods::unmarshal buffer too small");
+                else if ((end - begin - MIN_SIZE) % PERIOD_SIZE != 0)
+                    throw std::length_error("PacketPeriods::unmarshal expected period list to be a multiple of 5");
+                begin += MIN_SIZE;
+                std::map<uint8_t, uint32_t> result;
+                for (; begin != end; begin += PERIOD_SIZE)
+                    result[*begin] = read32<uint32_t>(begin + 1);
+                return result;
+            }
+        } __attribute__((packed));
+
+        struct BaudRates
+        {
+            static constexpr int ID = 182;
+            static constexpr int SIZE = 17;
+
+            uint8_t permanent;
+            uint32_t primary_port;
+            uint32_t gpio;
+            uint32_t auxiliary_rs232;
+            uint32_t reserved;
+
+            template<typename OutputIterator>
+            OutputIterator marshal(OutputIterator out)
+            {
+                out[0] = permanent;
+                write32(out + 1, primary_port);
+                write32(out + 5, gpio);
+                write32(out + 9, auxiliary_rs232);
+                write32(out + 13, static_cast<uint32_t>(0));
+                return out + 17;
+            }
+
+            template<typename InputIterator>
+            static BaudRates unmarshal(InputIterator begin, InputIterator end)
+            {
+                if (end - begin != SIZE)
+                    throw std::length_error("BaudRates::unmarshal buffer size not the expected size");
+
+                return BaudRates {
+                    0,
+                    read32<uint32_t>(begin + 1),
+                    read32<uint32_t>(begin + 5),
+                    read32<uint32_t>(begin + 9),
+                    static_cast<uint32_t>(0)
+                };
+            }
+        } __attribute__((packed));
+
+        struct Alignment
+        {
+            static constexpr int SIZE = 73;
+
+            uint8_t permanent;
+            float dcm[9];
+            float gnss_antenna_offset_xyz[3];
+            float odometer_offset_xyz[3];
+            float external_data_offset_xyz[3];
+
+            template<typename OutputIterator>
+            OutputIterator marshal(OutputIterator out)
+            {
+                out[0] = permanent;
+                for (int i = 0; i < 9; ++i)
+                    write32(out + 1 + 4 * i, dcm[i]);
+                for (int i = 0; i < 3; ++i)
+                {
+                    write32(out + 37 + 4 * i, gnss_antenna_offset_xyz[i]);
+                    write32(out + 49 + 4 * i, odometer_offset_xyz[i]);
+                    write32(out + 61 + 4 * i, external_data_offset_xyz[i]);
+                }
+                return out + SIZE;
+            }
+
+            template<typename InputIterator>
+            static Alignment unmarshal(InputIterator begin, InputIterator end)
+            {
+                if (end - begin != SIZE)
+                    throw std::length_error("Alignment::unmarshal buffer size not the expected size");
+
+                Alignment out;
+                for (int i = 0; i < 9; ++i)
+                    out.dcm[i] = read32<float>(begin + 1 + 4 * i);
+                for (int i = 0; i < 3; ++i)
+                {
+                    out.gnss_antenna_offset_xyz[i]  = read32<float>(begin + 37 + 4 * i);
+                    out.odometer_offset_xyz[i]      = read32<float>(begin + 49 + 4 * i);
+                    out.external_data_offset_xyz[i] = read32<float>(begin + 61 + 4 * i);
+                }
+                return out;
             }
         } __attribute__((packed));
     }
