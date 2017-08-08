@@ -147,6 +147,8 @@ namespace advanced_navigation_anpp
          */
         struct Header
         {
+            static constexpr int SIZE = 5;
+
             /** Longitudinal redundancy check for the header
              *
              * <code>
@@ -212,6 +214,9 @@ namespace advanced_navigation_anpp
         /** Acknowledgment packet */
         struct Acknowledge
         {
+            static constexpr int ID = 0;
+            static constexpr int SIZE = 4;
+
             uint8_t acked_packet_id;
             uint8_t acked_payload_checksum_lsb;
             uint8_t acked_payload_checksum_msb;
@@ -264,12 +269,20 @@ namespace advanced_navigation_anpp
          */
         struct Request
         {
+            static constexpr int ID = 1;
+            static constexpr int MIN_SIZE = 0;
+
             template<typename OutputIterator, typename InputIterator>
-            OutputIterator marshal(OutputIterator out, InputIterator begin, InputIterator end)
+            OutputIterator marshal(OutputIterator out, InputIterator begin, InputIterator end) const
             {
                 return std::copy(begin, end, out);
             }
 
+            template<typename OutputIterator>
+            OutputIterator marshal(OutputIterator out, uint8_t packet_id) const
+            {
+                return std::copy(&packet_id, &packet_id + 1, out);
+            }
         } __attribute__((packed));
 
         /** Boot modes */
@@ -282,6 +295,9 @@ namespace advanced_navigation_anpp
         /** Boot mode packet */
         struct BootMode
         {
+            static constexpr int ID = 2;
+            static constexpr int SIZE = 1;
+
             uint8_t boot_mode;
 
             template<typename OutputIterator>
@@ -303,6 +319,9 @@ namespace advanced_navigation_anpp
         /** Device information */
         struct DeviceInformation
         {
+            static constexpr int ID = 3;
+            static constexpr int SIZE = 24;
+
             uint32_t software_version;
             uint32_t device_id;
             uint32_t hardware_revision;
@@ -329,6 +348,9 @@ namespace advanced_navigation_anpp
 
         struct RestoreFactorySettings
         {
+            static constexpr int ID = 4;
+            static constexpr int SIZE = 4;
+
             uint8_t verification_sequence[4] = { 0x1C, 0x9E, 0x42, 0x85 };
 
             template<typename OutputIterator>
@@ -341,6 +363,9 @@ namespace advanced_navigation_anpp
 
         struct HotStartReset
         {
+            static constexpr int ID = 5;
+            static constexpr int SIZE = 4;
+
             uint8_t verification_sequence[4] = { 0x7E, 0x7A, 0x05, 0x21 };
 
             template<typename OutputIterator>
@@ -353,6 +378,9 @@ namespace advanced_navigation_anpp
 
         struct ColdStartReset
         {
+            static constexpr int ID = 5;
+            static constexpr int SIZE = 4;
+
             uint8_t verification_sequence[4] = { 0xB7, 0x38, 0x5D, 0x9A };
 
             template<typename OutputIterator>
@@ -413,6 +441,9 @@ namespace advanced_navigation_anpp
 
         struct SystemState
         {
+            static constexpr int ID = 20;
+            static constexpr int SIZE = 100;
+
             /** Bitfield of SYSTEM_STATUS */
             uint16_t system_status;
             /** Bitfield of FILTER_STATUS */
@@ -438,31 +469,27 @@ namespace advanced_navigation_anpp
                 state.filter_status            = read16<uint16_t>(begin + 2);
                 state.unix_time_seconds        = read32<uint32_t>(begin + 4);
                 state.unix_time_microseconds   = read32<uint32_t>(begin + 8);
-                state.lat_lon_z[0]             = read64<double>(begin + 12);
-                state.lat_lon_z[1]             = read64<double>(begin + 20);
-                state.lat_lon_z[2]             = read64<double>(begin + 28);
-                state.velocity_ned[0]          = read32<float>(begin + 36);
-                state.velocity_ned[1]          = read32<float>(begin + 40);
-                state.velocity_ned[2]          = read32<float>(begin + 44);
-                state.body_acceleration_xyz[0] = read32<float>(begin + 48);
-                state.body_acceleration_xyz[1] = read32<float>(begin + 52);
-                state.body_acceleration_xyz[2] = read32<float>(begin + 56);
+
                 state.g                        = read32<float>(begin + 60);
-                state.rpy[0]                   = read32<float>(begin + 64);
-                state.rpy[1]                   = read32<float>(begin + 68);
-                state.rpy[2]                   = read32<float>(begin + 72);
-                state.angular_velocity[0]      = read32<float>(begin + 76);
-                state.angular_velocity[1]      = read32<float>(begin + 80);
-                state.angular_velocity[2]      = read32<float>(begin + 84);
-                state.lat_lon_z_stddev[0]      = read32<float>(begin + 88);
-                state.lat_lon_z_stddev[1]      = read32<float>(begin + 92);
-                state.lat_lon_z_stddev[2]      = read32<float>(begin + 96);
+
+                for (int i = 0; i < 3; ++i)
+                {
+                    state.lat_lon_z[i]             = read64<double>(begin + 12 + 8 * i);
+                    state.velocity_ned[i]          = read32<float>(begin + 36 + 4 * i);
+                    state.body_acceleration_xyz[i] = read32<float>(begin + 48 + 4 * i);
+                    state.rpy[i]                   = read32<float>(begin + 64 + 4 * i);
+                    state.angular_velocity[i]      = read32<float>(begin + 76 + 4 * i);
+                    state.lat_lon_z_stddev[i]      = read32<float>(begin + 88 + 4 * i);
+                }
                 return state;
             }
         } __attribute__((packed));
 
         struct UnixTime
         {
+            static constexpr int ID = 21;
+            static constexpr int SIZE = 8;
+
             uint32_t seconds;
             uint32_t microseconds;
 
@@ -477,6 +504,9 @@ namespace advanced_navigation_anpp
 
         struct Status
         {
+            static constexpr int ID = 23;
+            static constexpr int SIZE = 4;
+
             /** Bitfield of SYSTEM_STATUS */
             uint16_t system_status;
             /** Bitfield of FILTER_STATUS */
@@ -493,6 +523,9 @@ namespace advanced_navigation_anpp
 
         struct GeodeticPositionStandardDeviation
         {
+            static constexpr int ID = 24;
+            static constexpr int SIZE = 12;
+
             float   lat_lon_z_stddev[3];
 
             template<typename InputIterator>
@@ -510,6 +543,9 @@ namespace advanced_navigation_anpp
 
         struct NEDVelocityStandardDeviation
         {
+            static constexpr int ID = 25;
+            static constexpr int SIZE = 12;
+
             float ned[3];
 
             template<typename InputIterator>
@@ -527,6 +563,9 @@ namespace advanced_navigation_anpp
 
         struct EulerOrientationStandardDeviation
         {
+            static constexpr int ID = 26;
+            static constexpr int SIZE = 12;
+
             float rpy[3];
 
             template<typename InputIterator>
@@ -544,6 +583,9 @@ namespace advanced_navigation_anpp
 
         struct RawSensors
         {
+            static constexpr int ID = 28;
+            static constexpr int SIZE = 48;
+
             float accelerometers_xyz[3];
             float gyroscope_xyz[3];
             float magnetometer_xyz[3];
@@ -557,20 +599,18 @@ namespace advanced_navigation_anpp
                 if (end - begin != sizeof(RawSensors))
                     throw std::length_error("RawSensors::unmarshal buffer size not the expected size");
 
-                return RawSensors {
-                    read32<float>(begin + 0),
-                    read32<float>(begin + 4),
-                    read32<float>(begin + 8),
-                    read32<float>(begin + 12),
-                    read32<float>(begin + 16),
-                    read32<float>(begin + 20),
-                    read32<float>(begin + 24),
-                    read32<float>(begin + 28),
-                    read32<float>(begin + 32),
-                    read32<float>(begin + 36),
-                    read32<float>(begin + 40),
-                    read32<float>(begin + 44)
-                };
+                RawSensors out;
+                for (int i = 0; i < 3; ++i)
+                {
+                    out.accelerometers_xyz[i] = read32<float>(begin + 0 + 4 * i);
+                    out.gyroscope_xyz[i]      = read32<float>(begin + 12 + 4 * i);
+                    out.magnetometer_xyz[i]   = read32<float>(begin + 24 + 4 * i);
+                }
+
+                out.imu_temperature_C = read32<float>(begin + 36);
+                out.pressure = read32<float>(begin + 40);
+                out.pressure_temperature_C = read32<float>(begin + 44);
+                return out;
             }
         } __attribute__((packed));
 
@@ -597,24 +637,22 @@ namespace advanced_navigation_anpp
                 if (end - begin != SIZE)
                     throw std::length_error("RawGNSS::unmarshal buffer size not the expected size");
 
-                return RawGNSS {
-                    read32<uint32_t>(begin + 0),
-                    read32<uint32_t>(begin + 4),
-                    read64<double>(begin + 8),
-                    read64<double>(begin + 16),
-                    read64<double>(begin + 24),
-                    read32<float>(begin + 32),
-                    read32<float>(begin + 36),
-                    read32<float>(begin + 40),
-                    read32<float>(begin + 44),
-                    read32<float>(begin + 48),
-                    read32<float>(begin + 52),
-                    read32<float>(begin + 56),
-                    read32<float>(begin + 60),
-                    read32<float>(begin + 64),
-                    read32<float>(begin + 68),
-                    read16<uint16_t>(begin + 72)
-                };
+                RawGNSS out;
+                out.unix_time_seconds = read32<uint32_t>(begin + 0);
+                out.unix_time_microseconds = read32<uint32_t>(begin + 4);
+                for (int i = 0; i < 3; ++i)
+                {
+                    out.lat_lon_z[i] = read64<double>(begin + 8 + 8 * i);
+                    out.velocity_ned[i] = read32<float>(begin + 32 + 4 * i);
+                    out.lat_lon_z_stddev[i] = read32<float>(begin + 44 + 4 * i);
+                }
+
+                out.pitch = read32<float>(begin + 56);
+                out.yaw = read32<float>(begin + 60);
+                out.pitch_stddev = read32<float>(begin + 64);
+                out.yaw_stddev = read32<float>(begin + 68);
+                out.status = read16<uint16_t>(begin + 72);
+                return out;
             }
         } __attribute__((packed));
 
@@ -729,6 +767,7 @@ namespace advanced_navigation_anpp
         struct DetailedSatellites
         {
             static constexpr int ID = 31;
+            static constexpr int MIN_SIZE = 0;
 
             template<typename InputIterator>
             static void unmarshal(InputIterator begin, InputIterator end, std::vector<SatelliteInfo>& info)
@@ -914,8 +953,41 @@ namespace advanced_navigation_anpp
             }
         } __attribute__((packed));
 
+        struct PacketTimerPeriod
+        {
+            static constexpr int ID = 180;
+            static constexpr int SIZE = 4;
+
+            uint8_t  permanent;
+            uint8_t  utc_synchronization;
+            uint16_t period;
+
+            template<typename OutputIterator>
+            OutputIterator marshal(OutputIterator out) const
+            {
+                out[0] = permanent;
+                out[1] = utc_synchronization;
+                write16(out + 2, period);
+                return out + SIZE;
+            }
+
+            template<typename InputIterator>
+            static PacketTimerPeriod unmarshal(InputIterator begin, InputIterator end)
+            {
+                if (end - begin != SIZE)
+                    throw std::length_error("PacketTimerPeriod::unmarshal buffer size not the expected size");
+
+                PacketTimerPeriod out;
+                out.permanent = 0;
+                out.utc_synchronization = *(begin + 1);
+                out.period = read16<uint16_t>(begin + 2);
+                return out;
+            }
+        } __attribute__((packed));
+
         struct PacketPeriods
         {
+            static constexpr int ID = 181;
             static constexpr int MIN_SIZE = 2;
             static constexpr int PERIOD_SIZE = 5;
 
@@ -925,7 +997,7 @@ namespace advanced_navigation_anpp
             uint8_t clear_existing;
 
             template<typename OutputIterator, typename InputIterator>
-            OutputIterator marshal(OutputIterator out, InputIterator begin, InputIterator end)
+            OutputIterator marshal(OutputIterator out, InputIterator begin, InputIterator end) const
             {
                 out[0] = permanent;
                 out[1] = clear_existing;
@@ -964,7 +1036,7 @@ namespace advanced_navigation_anpp
             uint32_t reserved;
 
             template<typename OutputIterator>
-            OutputIterator marshal(OutputIterator out)
+            OutputIterator marshal(OutputIterator out) const
             {
                 out[0] = permanent;
                 write32(out + 1, primary_port);
@@ -992,6 +1064,7 @@ namespace advanced_navigation_anpp
 
         struct Alignment
         {
+            static constexpr int ID = 185;
             static constexpr int SIZE = 73;
 
             uint8_t permanent;
@@ -1001,7 +1074,7 @@ namespace advanced_navigation_anpp
             float external_data_offset_xyz[3];
 
             template<typename OutputIterator>
-            OutputIterator marshal(OutputIterator out)
+            OutputIterator marshal(OutputIterator out) const
             {
                 out[0] = permanent;
                 for (int i = 0; i < 9; ++i)
@@ -1022,6 +1095,7 @@ namespace advanced_navigation_anpp
                     throw std::length_error("Alignment::unmarshal buffer size not the expected size");
 
                 Alignment out;
+                out.permanent = 0;
                 for (int i = 0; i < 9; ++i)
                     out.dcm[i] = read32<float>(begin + 1 + 4 * i);
                 for (int i = 0; i < 3; ++i)
@@ -1033,6 +1107,160 @@ namespace advanced_navigation_anpp
                 return out;
             }
         } __attribute__((packed));
+
+        struct FilterOptions
+        {
+            static constexpr int ID   = 186;
+            static constexpr int SIZE = 17;
+
+            uint8_t permanent;
+            /** The vehicle type to tune the filter dynamics
+             *
+             * See VEHICLE_TYPES
+             */
+            uint8_t vehicle_type;
+            uint8_t enabled_internal_gnss;
+            uint8_t reserved_0 = 0;
+            uint8_t enabled_atmospheric_altitude;
+            uint8_t enabled_velocity_heading;
+            uint8_t enabled_reversing_detection;
+            uint8_t enabled_motion_analysis;
+            uint8_t reserved_1[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+            template<typename OutputIterator>
+            OutputIterator marshal(OutputIterator out) const
+            {
+                return std::copy(&permanent, reserved_1 + 9, out);
+            }
+
+            template<typename InputIterator>
+            static FilterOptions unmarshal(InputIterator begin, InputIterator end)
+            {
+                if (end - begin != SIZE)
+                    throw std::length_error("MagneticCalibrationValues::unmarshal buffer size not the expected size");
+
+                FilterOptions out;
+                out.permanent = 0;
+                std::copy(begin + 1, end, &out.vehicle_type);
+                return out;
+            }
+        } __attribute__ ((packed));
+
+        enum VEHICLE_TYPES
+        {
+            VEHICLE_UNCONSTRAINED         = 0,
+            VEHICLE_BICYCLE_OR_MOTORCYCLE = 1,
+            VEHICLE_CAR                   = 2,
+            VEHICLE_HOVERCRAFT            = 3,
+            VEHICLE_SUBMARINE             = 4,
+            VEHICLE_3D_UNDERWATER         = 5,
+            VEHICLE_FIXED_WING_PLANE      = 6,
+            VEHICLE_3D_AIRCRAFT           = 7,
+            VEHICLE_HUMAN                 = 8,
+            VEHICLE_BOAT                  = 9,
+            VEHICLE_LARGE_SHIP            = 10,
+            VEHICLE_STATIONARY            = 11,
+            VEHICLE_STUNT_PLANE           = 12,
+            VEHICLE_RACE_CAR              = 13
+        };
+
+        struct MagneticCalibrationValues
+        {
+            static constexpr int ID   = 189;
+            static constexpr int SIZE = 49;
+
+            uint8_t permanent;
+            float hard_iron_bias_xyz[3];
+            float soft_iron_transformation[9];
+
+            template<typename OutputIterator>
+            OutputIterator marshal(OutputIterator out) const
+            {
+                out[0] = permanent;
+                for (int i = 0; i < 3; ++i)
+                    write32(out + 1 + 4 * i, hard_iron_bias_xyz[i]);
+                for (int i = 0; i < 9; ++i)
+                    write32(out + 13 + 4 * i, soft_iron_transformation[i]);
+                return out + SIZE;
+            }
+
+            template<typename InputIterator>
+            static MagneticCalibrationValues unmarshal(InputIterator begin, InputIterator end)
+            {
+                if (end - begin != SIZE)
+                    throw std::length_error("MagneticCalibrationValues::unmarshal buffer size not the expected size");
+
+                MagneticCalibrationValues out;
+                out.permanent = 0;
+                for (int i = 0; i < 3; ++i)
+                    out.hard_iron_bias_xyz[i] = read32<float>(begin + 1 + 4 * i);
+                for (int i = 0; i < 9; ++i)
+                    out.soft_iron_transformation[i] = read32<float>(begin + 13 + 4 * i);
+                return out;
+            }
+        } __attribute__((packed));
+
+        struct MagneticCalibrationConfiguration
+        {
+            static constexpr int ID = 190;
+            static constexpr int SIZE = 1;
+
+            /** Action as one of MAGNETIC_CALIBRATION_ACTIONS */
+            uint8_t action;
+
+            template<typename OutputIterator>
+            OutputIterator marshal(OutputIterator out) const
+            {
+                out[0] = action;
+                return out + SIZE;
+            }
+        } __attribute__((packed));
+
+        enum MAGNETIC_CALIBRATION_ACTIONS
+        {
+            MAGNETIC_CALIBRATION_CANCEL,
+            MAGNETIC_CALIBRATION_START_2D,
+            MAGNETIC_CALIBRATION_START_3D,
+            MAGNETIC_CALIBRATION_RESET
+        };
+
+        struct MagneticCalibrationStatus
+        {
+            static constexpr int ID = 191;
+            static constexpr int SIZE = 3;
+
+            /** Status as one of MAGNETIC_CALIBRATION_STATUS */
+            uint8_t status;
+            uint8_t progress;
+            uint8_t error;
+
+            template<typename InputIterator>
+            static MagneticCalibrationStatus unmarshal(InputIterator begin, InputIterator end)
+            {
+                if (end - begin != SIZE)
+                    throw std::length_error("MagneticCalibrationStatus::unmarshal buffer size not the expected size");
+
+                MagneticCalibrationStatus out;
+                std::copy(begin, end, &out.status);
+                return out;
+            }
+        } __attribute__((packed));
+
+        enum MAGNETIC_CALIBRATION_STATUS
+        {
+            MAGNETIC_CALIBRATION_NOT_COMPLETED,
+            MAGNETIC_CALIBRATION_2D_COMPLETED,
+            MAGNETIC_CALIBRATION_3D_COMPLETED,
+            MAGNETIC_CALIBRATION_CUSTOM_COMPLETED,
+            MAGNETIC_CALIBRATION_2D_IN_PROGRESS,
+            MAGNETIC_CALIBRATION_3D_IN_PROGRESS,
+            MAGNETIC_CALIBRATION_ERROR_2D_EXCESSIVE_ROLL,
+            MAGNETIC_CALIBRATION_ERROR_2D_EXCESSIVE_PITCH,
+            MAGNETIC_CALIBRATION_ERROR_SENSOR_OVER_RANGE,
+            MAGNETIC_CALIBRATION_ERROR_SENSOR_TIME_OUT,
+            MAGNETIC_CALIBRATION_ERROR_SENSOR_SYSTEM_ERROR,
+            MAGNETIC_CALIBRATION_ERROR_SENSOR_INTERFERENCE_ERROR
+        };
     }
 }
 

@@ -10,6 +10,8 @@ using namespace advanced_navigation_anpp;
 using namespace advanced_navigation_anpp::protocol;
 using ::testing::ElementsAre;
 
+static_assert(sizeof(Header) == Header::SIZE, "SIZE and sizeof() do not agree");
+
 TEST(protocol_Header, it_is_invalid_when_constructed)
 {
     Header header;
@@ -77,6 +79,8 @@ TEST(protocol_Header, isPacketValid_returns_false_if_the_length_matches_but_not_
     header.payload_checksum_msb = 0x88;
     ASSERT_FALSE(header.isPacketValid(payload, payload + PAYLOAD_SIZE));
 }
+
+static_assert(sizeof(Acknowledge) == Acknowledge::SIZE, "SIZE and sizeof() do not agree");
 
 TEST(protocol_Acknowledge, isMatching_returns_true_if_the_id_and_checksum_match)
 {
@@ -187,6 +191,8 @@ TEST(protocol_Request, marshal_copies_the_packet_ids_to_the_output)
     ASSERT_THAT(out, ElementsAre(ID_PACKET_TIMER_PERIOD, ID_VELOCITY_BODY, ID_VELOCITY_NED));
 }
 
+static_assert(sizeof(BootMode) == BootMode::SIZE, "SIZE and sizeof() do not agree");
+
 TEST(protocol_BootMode, marshal)
 {
     vector<uint8_t> out{ 0xFF };
@@ -214,6 +220,8 @@ TEST(protocol_BootMode, unmarshal_fails_if_too_much_data_is_provided_and_does_no
     ASSERT_THROW(BootMode::unmarshal(ptr, ptr + 2), std::length_error);
 }
 
+static_assert(sizeof(DeviceInformation) == DeviceInformation::SIZE, "SIZE and sizeof() do not agree");
+
 TEST(protocol_DeviceInformation, unmarshal)
 {
     uint8_t device_info[24];
@@ -238,6 +246,10 @@ TEST(protocol_DeviceInformation, unmarshal_fails_if_too_much_data_is_provided_an
     uint8_t* ptr = nullptr;
     ASSERT_THROW(DeviceInformation::unmarshal(ptr, ptr + 25), std::length_error);
 }
+
+static_assert(sizeof(RestoreFactorySettings) == RestoreFactorySettings::SIZE, "SIZE and sizeof() do not agree");
+static_assert(sizeof(HotStartReset) == HotStartReset::SIZE, "SIZE and sizeof() do not agree");
+static_assert(sizeof(ColdStartReset) == ColdStartReset::SIZE, "SIZE and sizeof() do not agree");
 
 void RAW_SET(uint8_t* begin, std::vector<uint8_t> bytes)
 {
@@ -282,6 +294,8 @@ FPValue<double> TEST_FP8[] =
     { 8.09086413053048651776E20, { 0xF8, 0x5E, 0xF9, 0x2E, 0x2A, 0xEE, 0x45, 0x44 } },
     { 5.3024287165844605032726528E25, { 0xF9, 0x5E, 0xF9, 0x2E, 0x2A, 0xEE, 0x45, 0x45 } }
 };
+
+static_assert(sizeof(SystemState) == SystemState::SIZE, "SIZE and sizeof() do not agree");
 
 TEST(protocol_SystemState, unmarshal)
 {
@@ -356,6 +370,8 @@ TEST(protocol_SystemState, unmarshal_throws_if_given_too_much_data)
     ASSERT_THROW(SystemState::unmarshal(ptr, ptr + 101), std::length_error);
 }
 
+static_assert(sizeof(UnixTime) == UnixTime::SIZE, "SIZE and sizeof() do not agree");
+
 TEST(protocol_UnixTime, unmarshal)
 {
     uint8_t marshalled[100];
@@ -380,6 +396,8 @@ TEST(protocol_UnixTime, unmarshal_throws_if_given_too_much_data)
     ASSERT_THROW(UnixTime::unmarshal(ptr, ptr + 9), std::length_error);
 }
 
+static_assert(sizeof(Status) == Status::SIZE, "SIZE and sizeof() do not agree");
+
 TEST(protocol_Status, unmarshal)
 {
     uint8_t marshalled[100];
@@ -403,6 +421,8 @@ TEST(protocol_Status, unmarshal_throws_if_given_too_much_data)
     uint8_t* ptr = nullptr;
     ASSERT_THROW(Status::unmarshal(ptr, ptr + 5), std::length_error);
 }
+
+static_assert(sizeof(GeodeticPositionStandardDeviation) == GeodeticPositionStandardDeviation::SIZE, "SIZE and sizeof() do not agree");
 
 TEST(protocol_GeodeticPositionStandardDeviation, unmarshal)
 {
@@ -431,6 +451,8 @@ TEST(protocol_GeodeticPositionStandardDeviation, unmarshal_throws_if_given_too_m
     ASSERT_THROW(GeodeticPositionStandardDeviation::unmarshal(ptr, ptr + 13), std::length_error);
 }
 
+static_assert(sizeof(NEDVelocityStandardDeviation) == NEDVelocityStandardDeviation::SIZE, "SIZE and sizeof() do not agree");
+
 TEST(protocol_NEDVelocityStandardDeviation, unmarshal)
 {
     uint8_t marshalled[100];
@@ -458,6 +480,8 @@ TEST(protocol_NEDVelocityStandardDeviation, unmarshal_throws_if_given_too_much_d
     ASSERT_THROW(NEDVelocityStandardDeviation::unmarshal(ptr, ptr + 13), std::length_error);
 }
 
+static_assert(sizeof(EulerOrientationStandardDeviation) == EulerOrientationStandardDeviation::SIZE, "SIZE and sizeof() do not agree");
+
 TEST(protocol_EulerOrientationStandardDeviation, unmarshal)
 {
     uint8_t marshalled[100];
@@ -484,6 +508,8 @@ TEST(protocol_EulerOrientationStandardDeviation, unmarshal_throws_if_given_too_m
     uint8_t* ptr = nullptr;
     ASSERT_THROW(EulerOrientationStandardDeviation::unmarshal(ptr, ptr + 13), std::length_error);
 }
+
+static_assert(sizeof(RawSensors) == RawSensors::SIZE, "SIZE and sizeof() do not agree");
 
 TEST(protocol_RawSensors, unmarshal)
 {
@@ -932,6 +958,40 @@ TEST(protocol_LocalMagneticField, unmarshal_throws_if_given_too_much_data)
     ASSERT_THROW(LocalMagneticField::unmarshal(ptr, ptr + LocalMagneticField::SIZE + 1), std::length_error);
 }
 
+static_assert(sizeof(PacketTimerPeriod) == PacketTimerPeriod::SIZE, "SIZE and sizeof() do not agree");
+
+TEST(protocol_PacketTimerPeriod, marshal)
+{
+    uint8_t marshalled[PacketTimerPeriod::SIZE];
+    uint8_t expected[] = { 0x1, 0x2, 0x3, 0x4 };
+
+    PacketTimerPeriod data = { 1, 2, 0x0403 };
+    auto out = data.marshal(marshalled);
+    ASSERT_EQ(out, marshalled + PacketTimerPeriod::SIZE);
+    ASSERT_FALSE(std::memcmp(expected, marshalled, sizeof(marshalled)));
+}
+
+TEST(protocol_PacketTimerPeriod, unmarshal)
+{
+    uint8_t marshalled[PacketTimerPeriod::SIZE] = { 0x1, 0x2, 0x3, 0x4 };
+    PacketTimerPeriod expected = { 0, 2, 0x0403 };
+
+    auto unmarshalled = PacketTimerPeriod::unmarshal(marshalled, marshalled + PacketTimerPeriod::SIZE);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, PacketTimerPeriod::SIZE));
+}
+
+TEST(protocol_PacketTimerPeriod, unmarshal_throws_if_too_little_data_is_given)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(PacketTimerPeriod::unmarshal(ptr, ptr + PacketTimerPeriod::SIZE - 1), std::length_error);
+}
+
+TEST(protocol_PacketTimerPeriod, unmarshal_throws_if_too_much_data_is_given)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(PacketTimerPeriod::unmarshal(ptr, ptr + PacketTimerPeriod::SIZE + 1), std::length_error);
+}
+
 static_assert(sizeof(PacketPeriods) == PacketPeriods::MIN_SIZE, "MIN_SIZE and sizeof() do not agree");
 
 TEST(protocol_PacketPeriods, marshal)
@@ -1092,5 +1152,151 @@ TEST(protocol_Alignment, unmarshal_throws_if_given_too_much_data)
 {
     uint8_t* ptr = nullptr;
     ASSERT_THROW(Alignment::unmarshal(ptr, ptr + Alignment::SIZE + 1), std::length_error);
+}
+
+static_assert(sizeof(FilterOptions) == FilterOptions::SIZE, "sizeof and SIZE do not agree");
+
+TEST(protocol_FilterOptions, marshal)
+{
+    FilterOptions data;
+    data.permanent                    = 1;
+    data.vehicle_type                 = 2;
+    data.enabled_internal_gnss        = 3;
+    data.enabled_atmospheric_altitude = 4;
+    data.enabled_velocity_heading     = 5;
+    data.enabled_reversing_detection  = 6;
+    data.enabled_motion_analysis      = 7;
+
+    uint8_t expected[FilterOptions::SIZE] =
+    { 1, 2, 3, 0, 4, 5, 6, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    uint8_t marshalled[FilterOptions::SIZE];
+    auto out = data.marshal(marshalled);
+    ASSERT_EQ(out, marshalled + FilterOptions::SIZE);
+    ASSERT_FALSE(std::memcmp(expected, marshalled, FilterOptions::SIZE));
+}
+
+TEST(protocol_FilterOptions, unmarshal)
+{
+    FilterOptions expected;
+    expected.permanent                    = 0;
+    expected.vehicle_type                 = 2;
+    expected.enabled_internal_gnss        = 3;
+    expected.enabled_atmospheric_altitude = 4;
+    expected.enabled_velocity_heading     = 5;
+    expected.enabled_reversing_detection  = 6;
+    expected.enabled_motion_analysis      = 7;
+
+    uint8_t marshalled[FilterOptions::SIZE] =
+    { 1, 2, 3, 0, 4, 5, 6, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    FilterOptions out = FilterOptions::unmarshal(
+            marshalled, marshalled + FilterOptions::SIZE);
+    ASSERT_FALSE(std::memcmp(&expected, &out, FilterOptions::SIZE));
+}
+
+TEST(protocol_FilterOptions, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(FilterOptions::unmarshal(ptr, ptr + FilterOptions::SIZE - 1), std::length_error);
+}
+
+TEST(protocol_FilterOptions, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(FilterOptions::unmarshal(ptr, ptr + FilterOptions::SIZE + 1), std::length_error);
+}
+
+static_assert(sizeof(MagneticCalibrationValues) == MagneticCalibrationValues::SIZE, "sizeof and SIZE do not agree");
+
+TEST(protocol_MagneticCalibrationValues, marshal)
+{
+    MagneticCalibrationValues data;
+    data.permanent = 1;
+    for (int i = 0; i < 3; ++i)
+        data.hard_iron_bias_xyz[i] = TEST_FP4[i].fp;
+    for (int i = 0; i < 9; ++i)
+        data.soft_iron_transformation[i] = TEST_FP4[3 + i].fp;
+
+    uint8_t expected[MagneticCalibrationValues::SIZE];
+    expected[0] = 1;
+    for (int i = 0; i < 12; ++i)
+        RAW_SET(expected + 1 + i * 4, TEST_FP4[i].binary);
+
+    uint8_t marshalled[MagneticCalibrationValues::SIZE];
+    auto out = data.marshal(marshalled);
+    ASSERT_EQ(out, marshalled + MagneticCalibrationValues::SIZE);
+    ASSERT_FALSE(std::memcmp(expected, marshalled, MagneticCalibrationValues::SIZE));
+}
+
+TEST(protocol_MagneticCalibrationValues, unmarshal)
+{
+    MagneticCalibrationValues expected;
+    expected.permanent = 0;
+    for (int i = 0; i < 3; ++i)
+        expected.hard_iron_bias_xyz[i] = TEST_FP4[i].fp;
+    for (int i = 0; i < 9; ++i)
+        expected.soft_iron_transformation[i] = TEST_FP4[3 + i].fp;
+
+    uint8_t marshalled[MagneticCalibrationValues::SIZE];
+    marshalled[0] = 1;
+    for (int i = 0; i < 12; ++i)
+        RAW_SET(marshalled + 1 + i * 4, TEST_FP4[i].binary);
+
+    MagneticCalibrationValues out = MagneticCalibrationValues::unmarshal(
+            marshalled, marshalled + MagneticCalibrationValues::SIZE);
+    ASSERT_FALSE(std::memcmp(&expected, &out, MagneticCalibrationValues::SIZE));
+}
+
+TEST(protocol_MagneticCalibrationValues, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(MagneticCalibrationValues::unmarshal(ptr, ptr + MagneticCalibrationValues::SIZE - 1), std::length_error);
+}
+
+TEST(protocol_MagneticCalibrationValues, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(MagneticCalibrationValues::unmarshal(ptr, ptr + MagneticCalibrationValues::SIZE + 1), std::length_error);
+}
+
+static_assert(sizeof(MagneticCalibrationConfiguration) == MagneticCalibrationConfiguration::SIZE, "sizeof and SIZE do not agree");
+
+TEST(protocol_MagneticCalibrationConfiguration, marshal)
+{
+    MagneticCalibrationConfiguration data;
+    data.action = 1;
+
+    uint8_t expected[MagneticCalibrationConfiguration::SIZE];
+    expected[0] = 1;
+
+    uint8_t marshalled[MagneticCalibrationConfiguration::SIZE];
+    auto out = data.marshal(marshalled);
+    ASSERT_EQ(out, marshalled + MagneticCalibrationConfiguration::SIZE);
+    ASSERT_FALSE(std::memcmp(expected, marshalled, MagneticCalibrationConfiguration::SIZE));
+}
+
+static_assert(sizeof(MagneticCalibrationStatus) == MagneticCalibrationStatus::SIZE, "sizeof and SIZE do not agree");
+
+TEST(protocol_MagneticCalibrationStatus, unmarshal)
+{
+    MagneticCalibrationStatus expected = { 1, 2, 3 };
+    uint8_t marshalled[MagneticCalibrationStatus::SIZE] = { 1, 2, 3 };
+
+    MagneticCalibrationStatus out = MagneticCalibrationStatus::unmarshal(
+            marshalled, marshalled + MagneticCalibrationStatus::SIZE);
+    ASSERT_FALSE(std::memcmp(&expected, &out, MagneticCalibrationStatus::SIZE));
+}
+
+TEST(protocol_MagneticCalibrationStatus, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(MagneticCalibrationStatus::unmarshal(ptr, ptr + MagneticCalibrationStatus::SIZE - 1), std::length_error);
+}
+
+TEST(protocol_MagneticCalibrationStatus, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(MagneticCalibrationStatus::unmarshal(ptr, ptr + MagneticCalibrationStatus::SIZE + 1), std::length_error);
 }
 
