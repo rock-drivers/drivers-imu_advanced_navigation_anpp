@@ -1,14 +1,16 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "test_Helpers.hpp"
 #include <advanced_navigation_anpp/Protocol.hpp>
+#include <advanced_navigation_anpp/Driver.hpp>
+#include <iodrivers_base/FixtureGtest.hpp>
 #include <list>
 #include <stdexcept>
 #include <cstring>
 
 using namespace std;
-using namespace advanced_navigation_anpp;
 using namespace advanced_navigation_anpp::protocol;
-using ::testing::ElementsAre;
+using namespace testing;
 
 static_assert(sizeof(Header) == Header::SIZE, "SIZE and sizeof() do not agree");
 
@@ -85,34 +87,34 @@ static_assert(sizeof(Acknowledge) == Acknowledge::SIZE, "SIZE and sizeof() do no
 TEST(protocol_Acknowledge, isMatching_returns_true_if_the_id_and_checksum_match)
 {
     Header header(1, nullptr, nullptr);
-    Acknowledge ack = { 1, header.payload_checksum_lsb, header.payload_checksum_msb, ACK_SUCCESS };
+    Acknowledge ack = { 1, header.payload_checksum_lsb, header.payload_checksum_msb, advanced_navigation_anpp::ACK_SUCCESS };
     ASSERT_TRUE(ack.isMatching(header));
 }
 
 TEST(protocol_Acknowledge, isMatching_returns_false_if_the_id_does_not_match)
 {
     Header header(1, nullptr, nullptr);
-    Acknowledge ack = { 2, header.payload_checksum_lsb, header.payload_checksum_msb, ACK_SUCCESS };
+    Acknowledge ack = { 2, header.payload_checksum_lsb, header.payload_checksum_msb, advanced_navigation_anpp::ACK_SUCCESS };
     ASSERT_FALSE(ack.isMatching(header));
 }
 
 TEST(protocol_Acknowledge, isMatching_returns_false_if_the_checksum_lsb_does_not_match)
 {
     Header header(1, nullptr, nullptr);
-    Acknowledge ack = { 1, 0x10, header.payload_checksum_msb, ACK_SUCCESS };
+    Acknowledge ack = { 1, 0x10, header.payload_checksum_msb, advanced_navigation_anpp::ACK_SUCCESS };
     ASSERT_FALSE(ack.isMatching(header));
 }
 
 TEST(protocol_Acknowledge, isMatching_returns_false_if_the_checksum_msb_does_not_match)
 {
     Header header(1, nullptr, nullptr);
-    Acknowledge ack = { 1, header.payload_checksum_lsb, 0x10, ACK_SUCCESS };
+    Acknowledge ack = { 1, header.payload_checksum_lsb, 0x10, advanced_navigation_anpp::ACK_SUCCESS };
     ASSERT_FALSE(ack.isMatching(header));
 }
 
 
 template<typename Predicate>
-void validateAcknowledgePredicate(std::list<ACK_RESULTS> expected_true, Predicate predicate)
+void validateAcknowledgePredicate(std::list<advanced_navigation_anpp::ACK_RESULTS> expected_true, Predicate predicate)
 {
     for (uint8_t i = 0; i < 8; ++i)
     {
@@ -132,42 +134,42 @@ void validateAcknowledgePredicate(std::list<ACK_RESULTS> expected_true, Predicat
 
 TEST(protocol_Acknowledge, isSuccess)
 {
-    validateAcknowledgePredicate({ ACK_SUCCESS },
+    validateAcknowledgePredicate({ advanced_navigation_anpp::ACK_SUCCESS },
             [](Acknowledge ack){ return ack.isSuccess(); });
 }
 
 TEST(protocol_Acknowledge, isPacketValidationFailure)
 {
-    validateAcknowledgePredicate({ ACK_FAILED_PACKET_VALIDATION_CRC, ACK_FAILED_PACKET_VALIDATION_SIZE },
+    validateAcknowledgePredicate({ advanced_navigation_anpp::ACK_FAILED_PACKET_VALIDATION_CRC, advanced_navigation_anpp::ACK_FAILED_PACKET_VALIDATION_SIZE },
             [](Acknowledge ack){ return ack.isPacketValidationFailure(); });
 }
 
 TEST(protocol_Acknowledge, isProtocolError)
 {
-    validateAcknowledgePredicate({ ACK_FAILED_OUT_OF_RANGE, ACK_FAILED_UNKNOWN_PACKET },
+    validateAcknowledgePredicate({ advanced_navigation_anpp::ACK_FAILED_OUT_OF_RANGE, advanced_navigation_anpp::ACK_FAILED_UNKNOWN_PACKET },
             [](Acknowledge ack){ return ack.isProtocolError(); });
 }
 
 TEST(protocol_Acknowledge, isNotReady)
 {
-    validateAcknowledgePredicate({ ACK_FAILED_SYSTEM_NOT_READY },
+    validateAcknowledgePredicate({ advanced_navigation_anpp::ACK_FAILED_SYSTEM_NOT_READY },
             [](Acknowledge ack){ return ack.isNotReady(); });
 }
 
 TEST(protocol_Acknowledge, isSystemError)
 {
-    validateAcknowledgePredicate({ ACK_FAILED_SYSTEM_FLASH_FAILURE },
+    validateAcknowledgePredicate({ advanced_navigation_anpp::ACK_FAILED_SYSTEM_FLASH_FAILURE },
             [](Acknowledge ack){ return ack.isSystemError(); });
 }
 
 TEST(protocol_Acknowledge, unmarshal)
 {
-    uint8_t data[5] = { 1, 2, 3, ACK_SUCCESS };
+    uint8_t data[5] = { 1, 2, 3, advanced_navigation_anpp::ACK_SUCCESS };
     Acknowledge ack = Acknowledge::unmarshal(data, data + 4);
     ASSERT_EQ(1, ack.acked_packet_id);
     ASSERT_EQ(2, ack.acked_payload_checksum_lsb);
     ASSERT_EQ(3, ack.acked_payload_checksum_msb);
-    ASSERT_EQ(ACK_SUCCESS, ack.result);
+    ASSERT_EQ(advanced_navigation_anpp::ACK_SUCCESS, ack.result);
 }
 
 TEST(protocol_Acknowledge, unmarshal_fails_if_too_little_data_is_provided_and_does_not_access_any_of_it)
@@ -250,50 +252,6 @@ TEST(protocol_DeviceInformation, unmarshal_fails_if_too_much_data_is_provided_an
 static_assert(sizeof(RestoreFactorySettings) == RestoreFactorySettings::SIZE, "SIZE and sizeof() do not agree");
 static_assert(sizeof(HotStartReset) == HotStartReset::SIZE, "SIZE and sizeof() do not agree");
 static_assert(sizeof(ColdStartReset) == ColdStartReset::SIZE, "SIZE and sizeof() do not agree");
-
-void RAW_SET(uint8_t* begin, std::vector<uint8_t> bytes)
-{
-    std::copy(bytes.begin(), bytes.end(), begin);
-}
-
-// Floating-point values below have been generated by taking a  seed value
-// (the first one, starting with the 123456... sequence) and then adding one
-// to the first and last byte, checking the corresponding FP value
-//
-// Found FP-to-binary converters online
-template<typename T>
-struct FPValue
-{
-    T fp;
-    std::vector<uint8_t> binary;
-};
-
-FPValue<float> TEST_FP4[] = 
-{
-    { 1.23456792E8, { 0xA3, 0x79, 0xEB, 0x4C } },
-    { 4.938272E8, { 0xA4, 0x79, 0xEB, 0x4D } },
-    { 1.975308928E9, { 0xA5, 0x79, 0xEB, 0x4E } },
-    { 7.901236224E9, { 0xA6, 0x79, 0xEB, 0x4F } },
-    { 3.1604946944E10, { 0xA7, 0x79, 0xEB, 0x50 } },
-    { 1.26419795968E11, { 0xA8, 0x79, 0xEB, 0x51 } },
-    { 5.0567921664E11, { 0xA9, 0x79, 0xEB, 0x52 } },
-    { 2.022716997632E12, { 0xAA, 0x79, 0xEB, 0x53 } },
-    { 8.090868514816E12, { 0xAB, 0x79, 0xEB, 0x54 } },
-    { 3.2363476156416E13, { 0xAC, 0x79, 0xEB, 0x55 } },
-    { 1.29453913014272E14, { 0xAD, 0x79, 0xEB, 0x56 } },
-    { 5.1781568561152E14, { 0xAE, 0x79, 0xEB, 0x57 } },
-    { 2.071262876663808E15, { 0xAF, 0x79, 0xEB, 0x58 } },
-    { 8.285052043526144E15, { 0xB0, 0x79, 0xEB, 0x59 } },
-    { 1.35742301477225365504E20, { 0xB1, 0x79, 0xEB, 0x60 } },
-    { 5.42969241093273550848E20, { 0xB2, 0x79, 0xEB, 0x61 } }
-};
-
-FPValue<double> TEST_FP8[] = 
-{
-    { 1.2345678910111214e16, { 0xF7, 0x5E, 0xF9, 0x2E, 0x2A, 0xEE, 0x45, 0x43 } },
-    { 8.09086413053048651776E20, { 0xF8, 0x5E, 0xF9, 0x2E, 0x2A, 0xEE, 0x45, 0x44 } },
-    { 5.3024287165844605032726528E25, { 0xF9, 0x5E, 0xF9, 0x2E, 0x2A, 0xEE, 0x45, 0x45 } }
-};
 
 static_assert(sizeof(SystemState) == SystemState::SIZE, "SIZE and sizeof() do not agree");
 
@@ -1298,5 +1256,153 @@ TEST(protocol_MagneticCalibrationStatus, unmarshal_throws_if_given_too_much_data
 {
     uint8_t* ptr = nullptr;
     ASSERT_THROW(MagneticCalibrationStatus::unmarshal(ptr, ptr + MagneticCalibrationStatus::SIZE + 1), std::length_error);
+}
+
+struct protocol_FunctionsTest : ::testing::Test, iodrivers_base::Fixture<advanced_navigation_anpp::Driver>
+{
+    protocol_FunctionsTest()
+    {
+        driver.openURI("test://");
+    }
+};
+
+
+struct PacketMock {
+    static constexpr uint8_t ID   = 5;
+    static constexpr uint8_t SIZE = 4;
+
+    uint8_t buffer[SIZE];
+
+    PacketMock()
+    {
+        std::iota(buffer, buffer + PacketMock::SIZE, 0);
+    }
+
+    template<typename OutputIterator>
+    OutputIterator marshal(OutputIterator it) const
+    {
+        return std::copy_n(buffer, SIZE, it);
+    }
+
+    template<typename InputIterator>
+    static PacketMock unmarshal(InputIterator begin, InputIterator end)
+    {
+        PacketMock packet;
+        std::copy(begin, end, packet.buffer);
+        return packet;
+    }
+} __attribute__((packed));
+
+TEST_F(protocol_FunctionsTest, writePacket_marshals_adds_a_valid_header_and_writes_the_packet)
+{
+    PacketMock packet;
+
+    Header header = advanced_navigation_anpp::protocol::writePacket(driver, packet);
+    auto raw_data = readDataFromDriver();
+    ASSERT_FALSE(std::memcmp(raw_data.data(), &header, 5));
+    ASSERT_FALSE(std::memcmp(raw_data.data() + 5, &packet, 4));
+
+    ASSERT_TRUE(header.isValid());
+    ASSERT_TRUE(header.isPacketValid(&raw_data[5], &raw_data[9]));
+    ASSERT_EQ(header.packet_id, 5);
+    ASSERT_EQ(header.payload_length, 4);
+}
+
+TEST_F(protocol_FunctionsTest, waitForPacket_returns_if_it_receives_the_expected_packet_within_the_timeout)
+{
+    std::vector<uint8_t> packet_buffer{ 0, 1, 2, 3 };
+    pushDataToDriver(makePacket<PacketMock>(packet_buffer));
+    auto packet = waitForPacket<PacketMock>(driver, base::Time());
+
+    EXPECT_THAT(std::vector<uint8_t>(packet.buffer, packet.buffer + 4), ContainerEq(packet_buffer));
+}
+
+TEST_F(protocol_FunctionsTest, waitForPacket_throws_if_no_packets_have_been_received)
+{
+    std::vector<uint8_t> packet_buffer{ 0, 1, 2, 3 };
+    ASSERT_THROW(waitForPacket<PacketMock>(driver, base::Time()), iodrivers_base::TimeoutError);
+}
+
+TEST_F(protocol_FunctionsTest, waitForPacket_ignores_packets_with_a_non_matching_ID_and_return_the_right_packet)
+{
+    pushDataToDriver(makePacket<BootMode>({ 3 }));
+    std::vector<uint8_t> packet_buffer{ 0, 1, 2, 3 };
+    pushDataToDriver(makePacket<PacketMock>(packet_buffer));
+    auto packet = waitForPacket<PacketMock>(driver, base::Time::fromSeconds(1));
+
+    EXPECT_THAT(std::vector<uint8_t>(packet.buffer, packet.buffer + 4), ContainerEq(packet_buffer));
+}
+
+TEST_F(protocol_FunctionsTest, waitForPacket_accounts_for_time_spent_reading_ignored_packets_in_the_overall_timeout)
+{
+    for (int i = 0; i < 1000; ++i)
+        pushDataToDriver(makePacket<BootMode>({ 3 }));
+    pushDataToDriver(makePacket<PacketMock>({ 0, 1, 2, 3 }));
+    // Timeout(Time()) is infinite timeout ... go f... figure
+    ASSERT_THROW(waitForPacket<PacketMock>(driver, base::Time::fromMicroseconds(1)), iodrivers_base::TimeoutError);
+}
+
+TEST_F(protocol_FunctionsTest, waitForAck_returns_an_ack_that_matches_the_given_header)
+{
+    Header header;
+    header.packet_id = 1;
+    header.payload_checksum_lsb = 2;
+    header.payload_checksum_msb = 3;
+
+    pushDataToDriver(makePacket<Acknowledge>(
+                { 1, 2, 3, static_cast<uint8_t>(advanced_navigation_anpp::ACK_FAILED_UNKNOWN_PACKET) }));
+    ASSERT_EQ(advanced_navigation_anpp::ACK_FAILED_UNKNOWN_PACKET, waitForAck(driver, header, base::Time()));
+}
+
+TEST_F(protocol_FunctionsTest, waitForAck_ignores_acks_for_other_packets)
+{
+    Header header;
+    header.packet_id = 1;
+    header.payload_checksum_lsb = 2;
+    header.payload_checksum_msb = 3;
+
+    pushDataToDriver(makePacket<Acknowledge>(
+                { 1, 2, 4, static_cast<uint8_t>(advanced_navigation_anpp::ACK_FAILED_UNKNOWN_PACKET) }));
+    pushDataToDriver(makePacket<Acknowledge>(
+                { 1, 2, 3, static_cast<uint8_t>(advanced_navigation_anpp::ACK_SUCCESS) }));
+    ASSERT_EQ(advanced_navigation_anpp::ACK_SUCCESS, waitForAck(driver, header, base::Time()));
+}
+
+TEST_F(protocol_FunctionsTest, waitForAck_accounts_for_time_spent_reading_ignored_acks_in_the_overall_timeout)
+{
+    Header header;
+    header.packet_id = 1;
+    header.payload_checksum_lsb = 2;
+    header.payload_checksum_msb = 3;
+
+    // Timeout(Time()) is infinite timeout ... go f... figure
+    for (int i = 0; i < 1000; ++i)
+        pushDataToDriver(makePacket<Acknowledge>(
+                    { 1, 2, 4, static_cast<uint8_t>(advanced_navigation_anpp::ACK_FAILED_UNKNOWN_PACKET) }));
+    pushDataToDriver(makePacket<Acknowledge>(
+                { 1, 2, 3, static_cast<uint8_t>(advanced_navigation_anpp::ACK_SUCCESS) }));
+    ASSERT_THROW(waitForAck(driver, header, base::Time::fromMicroseconds(1)), iodrivers_base::TimeoutError);
+}
+
+TEST_F(protocol_FunctionsTest, validateAck_returns_if_an_ack_is_received_with_ACK_SUCCESS)
+{
+    Header header;
+    header.packet_id = 1;
+    header.payload_checksum_lsb = 2;
+    header.payload_checksum_msb = 3;
+    pushDataToDriver(makePacket<Acknowledge>(
+                { 1, 2, 3, static_cast<uint8_t>(advanced_navigation_anpp::ACK_SUCCESS) }));
+    EXPECT_NO_THROW(validateAck(driver, header, base::Time()));
+}
+
+TEST_F(protocol_FunctionsTest, validateAck_throws_AcknowledgeFailure_if_an_ack_is_received_with_a_failure)
+{
+    Header header;
+    header.packet_id = 1;
+    header.payload_checksum_lsb = 2;
+    header.payload_checksum_msb = 3;
+    pushDataToDriver(makePacket<Acknowledge>(
+                { 1, 2, 3, static_cast<uint8_t>(advanced_navigation_anpp::ACK_FAILED_UNKNOWN_PACKET) }));
+    ASSERT_THROW(validateAck(driver, header, base::Time()), advanced_navigation_anpp::AcknowledgeFailure);
 }
 

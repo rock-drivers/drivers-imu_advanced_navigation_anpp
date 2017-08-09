@@ -33,6 +33,11 @@ uint16_t protocol::crc(uint8_t const* begin, uint8_t const* end)
     return crc.checksum();
 }
 
+size_t Header::getPacketLength() const
+{
+    return payload_length + SIZE;
+}
+
 uint8_t Header::computeHeaderChecksum() const
 {
     return ((packet_id + payload_length + payload_checksum_lsb + payload_checksum_msb) ^ 0xFF) + 1;

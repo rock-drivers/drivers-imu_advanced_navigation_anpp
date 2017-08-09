@@ -7,6 +7,11 @@
 #include <cstring>
 #include <map>
 #include <type_traits>
+#include <base/Timeout.hpp>
+#include <iodrivers_base/Exceptions.hpp>
+
+#include <advanced_navigation_anpp/Types.hpp>
+#include <advanced_navigation_anpp/Exceptions.hpp>
 
 namespace advanced_navigation_anpp
 {
@@ -178,6 +183,9 @@ namespace advanced_navigation_anpp
              */
             Header(uint8_t packet_id, uint8_t const* begin, uint8_t const* end);
 
+            /** The length of the whole packet (header + payload) */
+            size_t getPacketLength() const;
+
             /** Check if the data in the header validates the header checksum
              */
             bool isValid() const;
@@ -193,28 +201,16 @@ namespace advanced_navigation_anpp
 
         /** The maximum packet size, header included
          */
-        static const int MAX_PACKET_SIZE = 256 + sizeof(Header);
+        static constexpr int MAX_PACKET_SIZE = 256 + sizeof(Header);
 
         /** Compute the CRC as expected by the protocol
          */
         uint16_t crc(uint8_t const* begin, uint8_t const* end);
 
-        /** Acknowledge result codes */
-        enum ACK_RESULTS
-        {
-            ACK_SUCCESS                       = 0,
-            ACK_FAILED_PACKET_VALIDATION_CRC  = 1,
-            ACK_FAILED_PACKET_VALIDATION_SIZE = 2,
-            ACK_FAILED_OUT_OF_RANGE           = 3,
-            ACK_FAILED_SYSTEM_FLASH_FAILURE   = 4,
-            ACK_FAILED_SYSTEM_NOT_READY       = 5,
-            ACK_FAILED_UNKNOWN_PACKET         = 6
-        };
-
         /** Acknowledgment packet */
         struct Acknowledge
         {
-            static constexpr int ID = 0;
+            static constexpr uint8_t ID = 0;
             static constexpr int SIZE = 4;
 
             uint8_t acked_packet_id;
@@ -269,7 +265,7 @@ namespace advanced_navigation_anpp
          */
         struct Request
         {
-            static constexpr int ID = 1;
+            static constexpr uint8_t ID = 1;
             static constexpr int MIN_SIZE = 0;
 
             template<typename OutputIterator, typename InputIterator>
@@ -295,7 +291,7 @@ namespace advanced_navigation_anpp
         /** Boot mode packet */
         struct BootMode
         {
-            static constexpr int ID = 2;
+            static constexpr uint8_t ID = 2;
             static constexpr int SIZE = 1;
 
             uint8_t boot_mode;
@@ -317,17 +313,10 @@ namespace advanced_navigation_anpp
         } __attribute__((packed));
 
         /** Device information */
-        struct DeviceInformation
+        struct DeviceInformation : public advanced_navigation_anpp::DeviceInformation
         {
-            static constexpr int ID = 3;
+            static constexpr uint8_t ID = 3;
             static constexpr int SIZE = 24;
-
-            uint32_t software_version;
-            uint32_t device_id;
-            uint32_t hardware_revision;
-            uint32_t serial_number_part0;
-            uint32_t serial_number_part1;
-            uint32_t serial_number_part2;
 
             template<typename RandomInputIterator>
             static DeviceInformation unmarshal(RandomInputIterator begin, RandomInputIterator end)
@@ -348,7 +337,7 @@ namespace advanced_navigation_anpp
 
         struct RestoreFactorySettings
         {
-            static constexpr int ID = 4;
+            static constexpr uint8_t ID = 4;
             static constexpr int SIZE = 4;
 
             uint8_t verification_sequence[4] = { 0x1C, 0x9E, 0x42, 0x85 };
@@ -363,7 +352,7 @@ namespace advanced_navigation_anpp
 
         struct HotStartReset
         {
-            static constexpr int ID = 5;
+            static constexpr uint8_t ID = 5;
             static constexpr int SIZE = 4;
 
             uint8_t verification_sequence[4] = { 0x7E, 0x7A, 0x05, 0x21 };
@@ -378,7 +367,7 @@ namespace advanced_navigation_anpp
 
         struct ColdStartReset
         {
-            static constexpr int ID = 5;
+            static constexpr uint8_t ID = 5;
             static constexpr int SIZE = 4;
 
             uint8_t verification_sequence[4] = { 0xB7, 0x38, 0x5D, 0x9A };
@@ -391,57 +380,9 @@ namespace advanced_navigation_anpp
             }
         } __attribute__((packed));
 
-        enum SYSTEM_STATUS
-        {
-            SYSTEM_FAILURE                    = 0x0001,
-            SYSTEM_ACCELEROMETER_FAILURE      = 0x0002,
-            SYSTEM_GYROSCOPE_FAILURE          = 0x0004,
-            SYSTEM_MAGNETOMETER_FAILURE       = 0x0008,
-            SYSTEM_PRESSURE_SENSOR_FAILURE    = 0x0010,
-            SYSTEM_GNSS_SENSOR_FAILURE        = 0x0020,
-            SYSTEM_ACCELEROMETER_OVER_RANGE   = 0x0040,
-            SYSTEM_GYROSCOPE_OVER_RANGE       = 0x0080,
-            SYSTEM_MAGNETOMETER_OVER_RANGE    = 0x0100,
-            SYSTEM_PRESSURE_SENSOR_OVER_RANGE = 0x0200,
-            SYSTEM_MIN_TEMPERATURE_ALARM      = 0x0400,
-            SYSTEM_MAX_TEMPERATURE_ALARM      = 0x0800,
-            SYSTEM_LOW_VOLTAGE_ALARM          = 0x1000,
-            SYSTEM_HIGH_VOLTAGE_ALARM         = 0x2000,
-            SYSTEM_GNSS_ANTENNA_DISCONNECTED  = 0x4000,
-            SYSTEM_DATA_OUTPUT_OVERFLOW_ALARM = 0x8000
-        };
-
-        enum FILTER_STATUS
-        {
-            FILTER_ORIENTATION_INITIALIZED      = 0x0001,
-            FILTER_NAVIGATION_INITIALIZED       = 0x0002,
-            FILTER_HEADING_INITIALIZED          = 0x0004,
-            FILTER_UTC_INITIALIZED              = 0x0008,
-
-            FILTER_GNSS_FIX_STATUS_MASK         = 0x0070,
-            FILTER_GNSS_NO_FIX                  = 0x0000,
-            FILTER_GNSS_2D                      = 0x0010,
-            FILTER_GNSS_3D                      = 0x0020,
-            FILTER_GNSS_SBAS                    = 0x0030,
-            FILTER_GNSS_DGPS                    = 0x0040,
-            FILTER_GNSS_OMNISTAR                = 0x0050,
-            FILTER_GNSS_RTK_FLOAT               = 0x0060,
-            FILTER_GNSS_RTK_FIXED               = 0x0070,
-
-            FILTER_EVENT_1                      = 0x0080,
-            FILTER_EVENT_2                      = 0x0100,
-            FILTER_INTERNAL_GNSS_ENABLED        = 0x0200,
-            FILTER_MAGNETIC_HEADING_ENABLED     = 0x0400,
-            FILTER_VELOCITY_HEADING_ENABLED     = 0x0800,
-            FILTER_ATMOSPHERIC_ALTITUDE_ENABLED = 0x1000,
-            FILTER_EXTERNAL_POSITION_ACTIVE     = 0x2000,
-            FILTER_EXTERNAL_VELOCITY_ACTIVE     = 0x4000,
-            FILTER_EXTERNAL_HEADING_ACTIVE      = 0x8000,
-        };
-
         struct SystemState
         {
-            static constexpr int ID = 20;
+            static constexpr uint8_t ID = 20;
             static constexpr int SIZE = 100;
 
             /** Bitfield of SYSTEM_STATUS */
@@ -487,7 +428,7 @@ namespace advanced_navigation_anpp
 
         struct UnixTime
         {
-            static constexpr int ID = 21;
+            static constexpr uint8_t ID = 21;
             static constexpr int SIZE = 8;
 
             uint32_t seconds;
@@ -504,7 +445,7 @@ namespace advanced_navigation_anpp
 
         struct Status
         {
-            static constexpr int ID = 23;
+            static constexpr uint8_t ID = 23;
             static constexpr int SIZE = 4;
 
             /** Bitfield of SYSTEM_STATUS */
@@ -523,7 +464,7 @@ namespace advanced_navigation_anpp
 
         struct GeodeticPositionStandardDeviation
         {
-            static constexpr int ID = 24;
+            static constexpr uint8_t ID = 24;
             static constexpr int SIZE = 12;
 
             float   lat_lon_z_stddev[3];
@@ -543,7 +484,7 @@ namespace advanced_navigation_anpp
 
         struct NEDVelocityStandardDeviation
         {
-            static constexpr int ID = 25;
+            static constexpr uint8_t ID = 25;
             static constexpr int SIZE = 12;
 
             float ned[3];
@@ -563,7 +504,7 @@ namespace advanced_navigation_anpp
 
         struct EulerOrientationStandardDeviation
         {
-            static constexpr int ID = 26;
+            static constexpr uint8_t ID = 26;
             static constexpr int SIZE = 12;
 
             float rpy[3];
@@ -583,7 +524,7 @@ namespace advanced_navigation_anpp
 
         struct RawSensors
         {
-            static constexpr int ID = 28;
+            static constexpr uint8_t ID = 28;
             static constexpr int SIZE = 48;
 
             float accelerometers_xyz[3];
@@ -616,7 +557,7 @@ namespace advanced_navigation_anpp
 
         struct RawGNSS
         {
-            static constexpr int ID   = 29;
+            static constexpr uint8_t ID   = 29;
             static constexpr int SIZE = 74;
 
             uint32_t unix_time_seconds;
@@ -678,7 +619,7 @@ namespace advanced_navigation_anpp
 
         struct Satellites
         {
-            static constexpr int ID   = 30;
+            static constexpr uint8_t ID   = 30;
             static constexpr int SIZE = 13;
 
             float hdop;
@@ -766,7 +707,7 @@ namespace advanced_navigation_anpp
 
         struct DetailedSatellites
         {
-            static constexpr int ID = 31;
+            static constexpr uint8_t ID = 31;
             static constexpr int MIN_SIZE = 0;
 
             template<typename InputIterator>
@@ -784,7 +725,7 @@ namespace advanced_navigation_anpp
 
         struct NEDVelocity
         {
-            static constexpr int ID = 35;
+            static constexpr uint8_t ID = 35;
             static constexpr int SIZE = 12;
 
             float ned[3];
@@ -804,7 +745,7 @@ namespace advanced_navigation_anpp
 
         struct BodyVelocity
         {
-            static constexpr int ID = 36;
+            static constexpr uint8_t ID = 36;
             static constexpr int SIZE = 12;
 
             float xyz[3];
@@ -825,7 +766,7 @@ namespace advanced_navigation_anpp
         /** Acceleration with the G force removed */
         struct Acceleration
         {
-            static constexpr int ID = 37;
+            static constexpr uint8_t ID = 37;
             static constexpr int SIZE = 12;
 
             float xyz[3];
@@ -845,7 +786,7 @@ namespace advanced_navigation_anpp
 
         struct BodyAcceleration
         {
-            static constexpr int ID = 38;
+            static constexpr uint8_t ID = 38;
             static constexpr int SIZE = 16;
 
             float xyz[3];
@@ -870,7 +811,7 @@ namespace advanced_navigation_anpp
 
         struct QuaternionOrientation
         {
-            static constexpr int ID = 40;
+            static constexpr uint8_t ID = 40;
             static constexpr int SIZE = 16;
 
             float im;
@@ -895,7 +836,7 @@ namespace advanced_navigation_anpp
 
         struct AngularVelocity
         {
-            static constexpr int ID = 42;
+            static constexpr uint8_t ID = 42;
             static constexpr int SIZE = 12;
 
             float xyz[3];
@@ -915,7 +856,7 @@ namespace advanced_navigation_anpp
 
         struct AngularAcceleration
         {
-            static constexpr int ID = 43;
+            static constexpr uint8_t ID = 43;
             static constexpr int SIZE = 12;
 
             float xyz[3];
@@ -935,7 +876,7 @@ namespace advanced_navigation_anpp
 
         struct LocalMagneticField
         {
-            static constexpr int ID = 50;
+            static constexpr uint8_t ID = 50;
             static constexpr int SIZE = 12;
 
             float xyz[3];
@@ -955,7 +896,7 @@ namespace advanced_navigation_anpp
 
         struct PacketTimerPeriod
         {
-            static constexpr int ID = 180;
+            static constexpr uint8_t ID = 180;
             static constexpr int SIZE = 4;
 
             uint8_t  permanent;
@@ -987,7 +928,7 @@ namespace advanced_navigation_anpp
 
         struct PacketPeriods
         {
-            static constexpr int ID = 181;
+            static constexpr uint8_t ID = 181;
             static constexpr int MIN_SIZE = 2;
             static constexpr int PERIOD_SIZE = 5;
 
@@ -995,6 +936,23 @@ namespace advanced_navigation_anpp
 
             uint8_t permanent;
             uint8_t clear_existing;
+
+            template<typename OutputIterator>
+            OutputIterator marshal(OutputIterator out) const
+            {
+                out[0] = permanent;
+                out[1] = clear_existing;
+                return out + MIN_SIZE;
+            }
+
+            template<typename OutputIterator>
+            OutputIterator marshal(OutputIterator out, uint8_t packet_id, uint32_t period) const
+            {
+                out[0] = permanent;
+                out[1] = clear_existing;
+                std::pair<uint8_t, uint32_t> pair(packet_id, period);
+                return marshal(out, &pair, &pair + 1);
+            }
 
             template<typename OutputIterator, typename InputIterator>
             OutputIterator marshal(OutputIterator out, InputIterator begin, InputIterator end) const
@@ -1026,7 +984,7 @@ namespace advanced_navigation_anpp
 
         struct BaudRates
         {
-            static constexpr int ID = 182;
+            static constexpr uint8_t ID = 182;
             static constexpr int SIZE = 17;
 
             uint8_t permanent;
@@ -1064,7 +1022,7 @@ namespace advanced_navigation_anpp
 
         struct Alignment
         {
-            static constexpr int ID = 185;
+            static constexpr uint8_t ID = 185;
             static constexpr int SIZE = 73;
 
             uint8_t permanent;
@@ -1110,7 +1068,7 @@ namespace advanced_navigation_anpp
 
         struct FilterOptions
         {
-            static constexpr int ID   = 186;
+            static constexpr uint8_t ID   = 186;
             static constexpr int SIZE = 17;
 
             uint8_t permanent;
@@ -1137,7 +1095,7 @@ namespace advanced_navigation_anpp
             static FilterOptions unmarshal(InputIterator begin, InputIterator end)
             {
                 if (end - begin != SIZE)
-                    throw std::length_error("MagneticCalibrationValues::unmarshal buffer size not the expected size");
+                    throw std::length_error("FilterOptions::unmarshal buffer size not the expected size");
 
                 FilterOptions out;
                 out.permanent = 0;
@@ -1146,27 +1104,9 @@ namespace advanced_navigation_anpp
             }
         } __attribute__ ((packed));
 
-        enum VEHICLE_TYPES
-        {
-            VEHICLE_UNCONSTRAINED         = 0,
-            VEHICLE_BICYCLE_OR_MOTORCYCLE = 1,
-            VEHICLE_CAR                   = 2,
-            VEHICLE_HOVERCRAFT            = 3,
-            VEHICLE_SUBMARINE             = 4,
-            VEHICLE_3D_UNDERWATER         = 5,
-            VEHICLE_FIXED_WING_PLANE      = 6,
-            VEHICLE_3D_AIRCRAFT           = 7,
-            VEHICLE_HUMAN                 = 8,
-            VEHICLE_BOAT                  = 9,
-            VEHICLE_LARGE_SHIP            = 10,
-            VEHICLE_STATIONARY            = 11,
-            VEHICLE_STUNT_PLANE           = 12,
-            VEHICLE_RACE_CAR              = 13
-        };
-
         struct MagneticCalibrationValues
         {
-            static constexpr int ID   = 189;
+            static constexpr uint8_t ID   = 189;
             static constexpr int SIZE = 49;
 
             uint8_t permanent;
@@ -1202,7 +1142,7 @@ namespace advanced_navigation_anpp
 
         struct MagneticCalibrationConfiguration
         {
-            static constexpr int ID = 190;
+            static constexpr uint8_t ID = 190;
             static constexpr int SIZE = 1;
 
             /** Action as one of MAGNETIC_CALIBRATION_ACTIONS */
@@ -1226,7 +1166,7 @@ namespace advanced_navigation_anpp
 
         struct MagneticCalibrationStatus
         {
-            static constexpr int ID = 191;
+            static constexpr uint8_t ID = 191;
             static constexpr int SIZE = 3;
 
             /** Status as one of MAGNETIC_CALIBRATION_STATUS */
@@ -1246,21 +1186,93 @@ namespace advanced_navigation_anpp
             }
         } __attribute__((packed));
 
-        enum MAGNETIC_CALIBRATION_STATUS
+        template<typename Packet, typename Driver>
+        inline Header writePacket(Driver& driver, Packet const& packet)
         {
-            MAGNETIC_CALIBRATION_NOT_COMPLETED,
-            MAGNETIC_CALIBRATION_2D_COMPLETED,
-            MAGNETIC_CALIBRATION_3D_COMPLETED,
-            MAGNETIC_CALIBRATION_CUSTOM_COMPLETED,
-            MAGNETIC_CALIBRATION_2D_IN_PROGRESS,
-            MAGNETIC_CALIBRATION_3D_IN_PROGRESS,
-            MAGNETIC_CALIBRATION_ERROR_2D_EXCESSIVE_ROLL,
-            MAGNETIC_CALIBRATION_ERROR_2D_EXCESSIVE_PITCH,
-            MAGNETIC_CALIBRATION_ERROR_SENSOR_OVER_RANGE,
-            MAGNETIC_CALIBRATION_ERROR_SENSOR_TIME_OUT,
-            MAGNETIC_CALIBRATION_ERROR_SENSOR_SYSTEM_ERROR,
-            MAGNETIC_CALIBRATION_ERROR_SENSOR_INTERFERENCE_ERROR
-        };
+            static_assert(Packet::SIZE + Header::SIZE < 300, "packet and header size are bigger than the expected buffer size");
+            uint8_t marshalled[300];
+            uint8_t* marshalled_end = packet.marshal(marshalled + Header::SIZE);
+            Header const* header =
+                new(marshalled) Header(Packet::ID, marshalled + Header::SIZE, marshalled_end);
+            driver.writePacket(marshalled, marshalled_end - marshalled);
+            return *header;
+        }
+
+        template<typename Packet, typename Driver>
+        inline Packet waitForPacket(Driver& driver, base::Time const& _timeout)
+        {
+            uint8_t marshalled[MAX_PACKET_SIZE * 10];
+
+            base::Timeout timeout(_timeout);
+            do
+            {
+                base::Time left = timeout.timeLeft();
+                if (left.toMicroseconds() < 0)
+                    left = base::Time();
+                int packet_size = driver.readPacket(marshalled, sizeof(marshalled), left);
+
+                Header const& header = reinterpret_cast<Header const&>(*marshalled);
+                if (header.packet_id == Packet::ID)
+                    return Packet::unmarshal(marshalled + Header::SIZE, marshalled + packet_size);
+            }
+            while (!timeout.elapsed());
+            throw iodrivers_base::TimeoutError(
+                    iodrivers_base::TimeoutError::NONE,
+                    "failed to get an expected response from the device");
+        }
+
+        template<typename Driver>
+        inline ACK_RESULTS waitForAck(Driver& driver, Header const& header, base::Time const& _timeout)
+        {
+            base::Timeout timeout(_timeout);
+            do
+            {
+                base::Time left = timeout.timeLeft();
+                if (left.toMicroseconds() < 0)
+                    left = base::Time();
+                Acknowledge ack = waitForPacket<Acknowledge>(driver, left);
+
+                if (ack.isMatching(header))
+                    return static_cast<ACK_RESULTS>(ack.result);
+            }
+            while (!timeout.elapsed());
+            throw iodrivers_base::TimeoutError(
+                    iodrivers_base::TimeoutError::NONE,
+                    "failed to get an ack matching the given packet header");
+        }
+
+        template<typename Driver>
+        inline void validateAck(Driver& driver, Header const& header, base::Time const& _timeout)
+        {
+            ACK_RESULTS result = waitForAck(driver, header, _timeout);
+            if (result != ACK_SUCCESS)
+                throw AcknowledgeFailure(header.packet_id, result);
+        }
+
+        template<typename Packet, typename Driver>
+        inline Packet query(Driver& driver)
+        {
+            uint8_t marshalled[MAX_PACKET_SIZE];
+            uint8_t* marshalled_end = Request().marshal(marshalled + Header::SIZE, Packet::ID);
+            new(marshalled) Header(Request::ID, marshalled + Header::SIZE, marshalled_end);
+            driver.writePacket(marshalled, marshalled_end - marshalled);
+
+            return waitForPacket<Packet>(driver, driver.getReadTimeout());
+        }
+
+        template<typename Packet, typename Driver>
+        inline Header writePacketPeriod(Driver& driver, int period, bool clear_existing)
+        {
+            uint8_t marshalled[MAX_PACKET_SIZE];
+            PacketPeriods packet;
+            packet.permanent = 0;
+            packet.clear_existing = clear_existing ? 1 : 0;
+            uint8_t* marshalled_end = packet.marshal(marshalled + Header::SIZE, Packet::ID, period);
+            Header const* header =
+                new(marshalled) Header(PacketPeriods::ID, marshalled + Header::SIZE, marshalled_end);
+            driver.writePacket(marshalled, marshalled_end - marshalled);
+            return *header;
+        }
     }
 }
 
