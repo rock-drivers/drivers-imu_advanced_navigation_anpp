@@ -32,7 +32,7 @@ namespace imu_advanced_navigation_anpp
         struct EulerOrientationStandardDeviation;
         struct NEDVelocity;
         struct NEDVelocityStandardDeviation;
-        struct Acceleration;
+        struct BodyAcceleration;
         struct BodyVelocity;
         struct AngularVelocity;
         struct AngularAcceleration;
@@ -72,7 +72,7 @@ namespace imu_advanced_navigation_anpp
         void process(protocol::EulerOrientationStandardDeviation const& payload);
         void process(protocol::NEDVelocity const& payload);
         void process(protocol::NEDVelocityStandardDeviation const& payload);
-        void process(protocol::Acceleration const& payload);
+        void process(protocol::BodyAcceleration const& payload);
         void process(protocol::BodyVelocity const& payload);
         void process(protocol::AngularVelocity const& payload);
         void process(protocol::AngularAcceleration const& payload);

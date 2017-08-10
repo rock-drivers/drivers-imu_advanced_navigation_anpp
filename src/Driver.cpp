@@ -240,7 +240,7 @@ void Driver::setNEDVelocityPeriod(int period, bool with_errors)
 
 void Driver::setAccelerationPeriod(int period)
 {
-    setPacketPeriod(protocol::Acceleration::ID, period);
+    setPacketPeriod(protocol::BodyAcceleration::ID, period);
 }
 
 void Driver::setBodyVelocityPeriod(int period)
@@ -331,7 +331,7 @@ void Driver::process(protocol::NEDVelocityStandardDeviation const& payload)
     mWorld.cov_velocity = ned2nwu * ned;
 }
 
-void Driver::process(protocol::Acceleration const& payload)
+void Driver::process(protocol::BodyAcceleration const& payload)
 {
     mAcceleration.time = mCurrentTimestamp;
     mAcceleration.acceleration = Eigen::Vector3d(payload.xyz[0], payload.xyz[1], payload.xyz[2]);
@@ -493,7 +493,7 @@ int Driver::poll()
         POLL_DISPATCH_CASE(protocol::EulerOrientationStandardDeviation);
         POLL_DISPATCH_CASE(protocol::NEDVelocity);
         POLL_DISPATCH_CASE(protocol::NEDVelocityStandardDeviation);
-        POLL_DISPATCH_CASE(protocol::Acceleration);
+        POLL_DISPATCH_CASE(protocol::BodyAcceleration);
         POLL_DISPATCH_CASE(protocol::BodyVelocity);
         POLL_DISPATCH_CASE(protocol::AngularVelocity);
         POLL_DISPATCH_CASE(protocol::AngularAcceleration);
