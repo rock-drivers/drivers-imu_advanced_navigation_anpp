@@ -4,6 +4,9 @@
 #include <advanced_navigation_anpp/Types.hpp>
 #include <iodrivers_base/Driver.hpp>
 #include <base/samples/RigidBodyState.hpp>
+#include <base/samples/RigidBodyAcceleration.hpp>
+#include <base/samples/IMUSensors.hpp>
+#include <gps_base/BaseTypes.hpp>
 
 namespace advanced_navigation_anpp 
 {
@@ -14,15 +17,71 @@ namespace advanced_navigation_anpp
         RESET_FACTORY
     };
 
+    namespace protocol
+    {
+        struct Header;
+    }
+
+    namespace protocol
+    {
+        struct UnixTime;
+        struct QuaternionOrientation;
+        struct EulerOrientationStandardDeviation;
+        struct NEDVelocity;
+        struct NEDVelocityStandardDeviation;
+        struct Acceleration;
+        struct BodyVelocity;
+        struct AngularVelocity;
+        struct AngularAcceleration;
+        struct RawSensors;
+        struct RawGNSS;
+        struct Satellites;
+    }
+
     class Driver : public iodrivers_base::Driver
     {
     private:
+        static constexpr int PACKET_ID_COUNT = 256;
+
         bool mUseDeviceTime = false;
+        uint8_t mLastPacketID = 0;
+        base::Time mCurrentTimestamp;
+        Eigen::Quaterniond const ned2nwu;
+
+        std::vector<uint32_t> mLastPackets;
+        std::vector<std::pair<uint32_t, uint8_t>> mPacketPeriods;
+
+        base::samples::RigidBodyState mWorld;
+        base::samples::RigidBodyState mBody;
+        base::samples::RigidBodyAcceleration mAcceleration;
+        base::samples::IMUSensors mIMUSensors;
+        gps_base::Solution mGNSSSolution;
+        gps_base::SolutionQuality mGNSSSolutionQuality;
+        gps_base::SatelliteInfo mGNSSSatelliteInfo;
 
         int extractPacket(uint8_t const* buffer, size_t buffer_size) const;
+        void setPacketPeriod(uint8_t packet_id, uint32_t period, bool clear_existing = false);
+
+        template<typename Packet>
+        void dispatch(uint8_t const* packet, uint8_t const* packet_end);
+        void process(protocol::UnixTime const& payload);
+        void process(protocol::QuaternionOrientation const& payload);
+        void process(protocol::EulerOrientationStandardDeviation const& payload);
+        void process(protocol::NEDVelocity const& payload);
+        void process(protocol::NEDVelocityStandardDeviation const& payload);
+        void process(protocol::Acceleration const& payload);
+        void process(protocol::BodyVelocity const& payload);
+        void process(protocol::AngularVelocity const& payload);
+        void process(protocol::AngularAcceleration const& payload);
+        void process(protocol::RawSensors const& payload);
+        void process(protocol::RawGNSS const& payload);
+        void process(protocol::Satellites const& payload);
+        void processDetailedSatellites(uint8_t const* packet, uint8_t const* packet_end);
 
     public:
         Driver();
+
+        void openURI(std::string const& uri);
 
         /** Whether timestamping is using the device's time
          *
@@ -69,31 +128,37 @@ namespace advanced_navigation_anpp
         /** Read the current configuration */
         void setConfiguration(Configuration const& conf);
 
-        /** Set the base packet period
-         *
-         * When the device generates packets periodically, it is done at a
-         * multiples of the base period. This methods set the period
+        /** The NWU position
          */
-        void setBasePacketPeriod(base::Time period);
+        base::samples::RigidBodyState getWorldRigidBodyState() const;
 
-        /** Read the base packet period currently used by the device
+        /** Body-relative information
          *
-         * @see setBasePacketPeriod
+         * This contains only body-relative velocity data
          */
-        base::Time readBasePacketPeriod();
-    
-        /** Whether there is a GNSS unit connected to the IMU or not
-         */
-        bool useGNSS(bool enable);
+        base::samples::RigidBodyState getBodyRigidBodyState() const;
 
-        /** Read all the available information that fit a RigidBodyState
-         * structure
-         */
-        base::samples::RigidBodyState readFullRigidBodyState();
+        /** Acceleration information */
+        base::samples::RigidBodyAcceleration getAcceleration() const;
+
+        /** Raw sensor data */
+        base::samples::IMUSensors getIMUSensors() const;
+
+        /** GNSS solution data */
+        gps_base::Solution getGNSSSolution() const;
+
+        /** GNSS quality information */
+        gps_base::SolutionQuality getGNSSSolutionQuality() const;
+
+        /** GNSS satellite information */
+        gps_base::SatelliteInfo getGNSSSatelliteInfo() const;
 
         /** Set the period at which the orientation should be generated
          *
-         * Periodic messages are processed by poll()
+         * Periodic messages are processed by poll().
+         *
+         * This updates the world-relative RBS as returned by
+         * getWorldRigidBodyState().
          *
          * @param period the period in multiples of the base packet period
          * @param with_errors if true, generate the orientation errors at the
@@ -108,11 +173,14 @@ namespace advanced_navigation_anpp
          *
          * Periodic messages are processed by poll()
          *
+         * This updates the world-relative RBS as returned by
+         * getWorldRigidBodyState().
+         *
          * @param period the period in multiples of the base packet period
          *
          * @see setBasePacketPeriod
          */
-        void setNEDVelocityPeriod(int period);
+        void setNEDVelocityPeriod(int period, bool with_errors = true);
 
         /** Set the period at which the acceleration in body frame
          * should be generated. This acceleration does not contain the
@@ -120,16 +188,22 @@ namespace advanced_navigation_anpp
          *
          * Periodic messages are processed by poll()
          *
+         * This updates the acceleration structure as returned by
+         * getAcceleration().
+         *
          * @param period the period in multiples of the base packet period
          *
          * @see setBasePacketPeriod
          */
-        void setBodyAccelerationPeriod(int period);
+        void setAccelerationPeriod(int period);
 
         /** Set the period at which the velocity in body frame
          * should be generated.
          *
          * Periodic messages are processed by poll()
+         *
+         * This updates the body-relative RBS as returned by
+         * getBodyRigidBodyState();
          *
          * @param period the period in multiples of the base packet period
          *
@@ -142,6 +216,9 @@ namespace advanced_navigation_anpp
          *
          * Periodic messages are processed by poll()
          *
+         * This updates the body-relative RBS as returned by
+         * getBodyRigidBodyState();
+         *
          * @param period the period in multiples of the base packet period
          *
          * @see setBasePacketPeriod
@@ -153,6 +230,9 @@ namespace advanced_navigation_anpp
          *
          * Periodic messages are processed by poll()
          *
+         * This updates the acceleration structure as returned by
+         * getAcceleration();
+         *
          * @param period the period in multiples of the base packet period
          *
          * @see setBasePacketPeriod
@@ -163,15 +243,20 @@ namespace advanced_navigation_anpp
          *
          * Periodic messages are processed by poll()
          *
+         * This updates the raw sensor structure as returned by
+         * getRawSensors()
+         *
          * @param period the period in multiples of the base packet period
          *
          * @see setBasePacketPeriod
          */
-        void setRawSensorsPeriod(int period, bool with_magnetic_field = true);
+        void setRawSensorsPeriod(int period);
 
         /** Set the period at which geodetic position should be generated
          *
          * Periodic messages are processed by poll()
+         *
+         * This updates the structure returned by getGNSSolution()
          *
          * @param period the period in multiples of the base packet period
          *
@@ -183,6 +268,8 @@ namespace advanced_navigation_anpp
          *
          * Periodic messages are processed by poll()
          *
+         * This updates the structure returned by getGNSSSolutionQuality()
+         *
          * @param period the period in multiples of the base packet period
          *
          * @see setBasePacketPeriod
@@ -193,11 +280,54 @@ namespace advanced_navigation_anpp
          *
          * Periodic messages are processed by poll()
          *
+         * This updates the structure returned by getGNSSSatelliteDetails()
+         *
          * @param period the period in multiples of the base packet period
          *
          * @see setBasePacketPeriod
          */
         void setGNSSSatelliteDetailsPeriod(int period);
+
+        /** Set the current timestamp for packets read by poll()
+         *
+         * Set the timestamp for the follow-up packets
+         *
+         * This is meant for testing purposes
+         */
+        void setCurrentTimestamp(base::Time const& time);
+
+        /** Return the current timestamp for packets read by poll()
+         */
+        base::Time getCurrentTimestamp() const;
+
+        /** Poll for periodic packets
+         *
+         * The method determines if a "packet period" just got completed, and
+         * returns the period that has been completed if it did so.
+         *
+         * For instance, with
+         *
+         * <code>
+         * setOrientationPeriod(1);
+         * setGNSSPeriod(10);
+         * </code>
+         *
+         * poll() will return 1 each time a full orientation-with-error has been
+         * received, and 10 when the GNSS data has been received. Note that
+         * within a given sensor cycle (i.e. same timestamp), it is possible
+         * that a period with a higher ID is returned before one with a lower
+         * ID.
+         *
+         * @return the ID of the period that has just been completed. 0 means
+         *   that a packet has been processed, but no period was completed. -1
+         *   means that poll() is attempting to re-synchronize with the period
+         *   train.
+         */
+        int poll();
+
+        /** Force poll() to re-synchronize to a full period
+         */
+        void resetPollSynchronization();
     };
 }
 

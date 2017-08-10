@@ -106,6 +106,7 @@ namespace advanced_navigation_anpp
             out[7] = (value >> 56) & 0xFF;
         }
 
+        static constexpr int PACKET_ID_COUNT = 256;
 
         /** Generic packet header
          *
@@ -1163,6 +1164,7 @@ namespace advanced_navigation_anpp
         inline Packet waitForPacket(Driver& driver, base::Time const& _timeout)
         {
             uint8_t marshalled[MAX_PACKET_SIZE * 10];
+            driver.resetPollSynchronization();
 
             base::Timeout timeout(_timeout);
             do
@@ -1221,14 +1223,14 @@ namespace advanced_navigation_anpp
             return waitForPacket<Packet>(driver, driver.getReadTimeout());
         }
 
-        template<typename Packet, typename Driver>
-        inline Header writePacketPeriod(Driver& driver, int period, bool clear_existing)
+        template<typename Driver>
+        inline Header writePacketPeriod(Driver& driver, uint8_t packet_id, int period, bool clear_existing)
         {
             uint8_t marshalled[MAX_PACKET_SIZE];
             PacketPeriods packet;
             packet.permanent = 0;
             packet.clear_existing = clear_existing ? 1 : 0;
-            uint8_t* marshalled_end = packet.marshal(marshalled + Header::SIZE, Packet::ID, period);
+            uint8_t* marshalled_end = packet.marshal(marshalled + Header::SIZE, packet_id, period);
             Header const* header =
                 new(marshalled) Header(PacketPeriods::ID, marshalled + Header::SIZE, marshalled_end);
             driver.writePacket(marshalled, marshalled_end - marshalled);

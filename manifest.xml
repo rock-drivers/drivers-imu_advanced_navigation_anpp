@@ -6,6 +6,7 @@
 
   <depend package="base/cmake" />
   <depend package="drivers/iodrivers_base" />
+  <depend package="drivers/gps_base" />
 
   <test_depend package="libgtest-dev" />
   <test_depend package="google-mock" />

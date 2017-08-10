@@ -1,10 +1,6 @@
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
+#include "test_Helpers.hpp"
 #include <advanced_navigation_anpp/Driver.hpp>
 #include <advanced_navigation_anpp/Protocol.hpp>
-
-#include <iodrivers_base/FixtureGtest.hpp>
-#include "test_Helpers.hpp"
 
 using namespace std;
 using namespace advanced_navigation_anpp;
@@ -12,11 +8,11 @@ using advanced_navigation_anpp::protocol::Header;
 using ::testing::ElementsAre;
 using ::testing::ContainerEq;
 
-struct DriverTest : ::testing::Test, iodrivers_base::Fixture<Driver>
+struct DriverTest : DriverTestBase
 {
     DriverTest()
     {
-        driver.openURI("test://");
+        openTestURI();
     }
 };
 
@@ -262,5 +258,201 @@ TEST_F(DriverTest, setConfiguration_applies_the_configuration)
             makeAcknowledge(raw_filter_options, ACK_SUCCESS));
 
     driver.setConfiguration(conf);
+}
+
+struct PollTest : DriverTest
+{
+    PollTest()
+    {
+    }
+
+    int poll(bool ignore_timestamp_handling = true)
+    {
+        if (ignore_timestamp_handling)
+            driver.setCurrentTimestamp(base::Time::now());
+        return driver.poll();
+    }
+};
+
+TEST_F(PollTest, poll_returns_the_period_ID_of_a_single_packet_period)
+{ IODRIVERS_BASE_MOCK();
+    EXPECT_PACKET_PERIOD(protocol::QuaternionOrientation::ID, 5);
+    EXPECT_PACKET_PERIOD(protocol::EulerOrientationStandardDeviation::ID, 0);
+    driver.setOrientationPeriod(5, false);
+    pushDataToDriver(makePacket<protocol::QuaternionOrientation>());
+    ASSERT_EQ(5, poll());
+}
+
+TEST_F(PollTest, poll_returns_the_period_ID_only_of_the_last_packet_in_the_period)
+{ IODRIVERS_BASE_MOCK();
+    EXPECT_PACKET_PERIOD(protocol::QuaternionOrientation::ID, 5);
+    EXPECT_PACKET_PERIOD(protocol::EulerOrientationStandardDeviation::ID, 5);
+    driver.setOrientationPeriod(5, true);
+    pushDataToDriver(makePacket<protocol::EulerOrientationStandardDeviation>());
+    pushDataToDriver(makePacket<protocol::QuaternionOrientation>());
+    ASSERT_EQ(0, poll());
+    ASSERT_EQ(5, poll());
+}
+
+TEST_F(PollTest, poll_handles_formerly_enabled_packets)
+{ IODRIVERS_BASE_MOCK();
+    EXPECT_PACKET_PERIOD(protocol::NEDVelocity::ID, 5);
+    EXPECT_PACKET_PERIOD(protocol::NEDVelocityStandardDeviation::ID, 0);
+    EXPECT_PACKET_PERIOD(protocol::QuaternionOrientation::ID, 5);
+    EXPECT_PACKET_PERIOD(protocol::EulerOrientationStandardDeviation::ID, 0);
+    EXPECT_PACKET_PERIOD(protocol::QuaternionOrientation::ID, 0);
+    EXPECT_PACKET_PERIOD(protocol::EulerOrientationStandardDeviation::ID, 0);
+    driver.setNEDVelocityPeriod(5, false);
+    driver.setOrientationPeriod(5, false);
+    // Last packet ID here is QuaternionOrientation
+    driver.setOrientationPeriod(0, false);
+    // Last packet ID here should be NEDVelocity
+    pushDataToDriver(makePacket<protocol::NEDVelocity>());
+    ASSERT_EQ(5, poll());
+}
+
+TEST_F(PollTest, poll_handles_interleaved_periods)
+{
+    { IODRIVERS_BASE_MOCK();
+        EXPECT_PACKET_PERIOD(protocol::NEDVelocity::ID, 2);
+        EXPECT_PACKET_PERIOD(protocol::NEDVelocityStandardDeviation::ID, 2);
+        EXPECT_PACKET_PERIOD(protocol::QuaternionOrientation::ID, 4);
+        EXPECT_PACKET_PERIOD(protocol::EulerOrientationStandardDeviation::ID, 4);
+        // ID order is
+        //   NEDVelocityStandardDeviation = 25
+        //   EulerOrientationStandardDeviation = 26
+        //   NEDVelocity = 35
+        //   QuaternionOrientation = 40
+        driver.setNEDVelocityPeriod(2);
+        driver.setOrientationPeriod(4);
+    }
+
+    pushDataToDriver(makePacket<protocol::NEDVelocityStandardDeviation>());
+    pushDataToDriver(makePacket<protocol::EulerOrientationStandardDeviation>());
+    pushDataToDriver(makePacket<protocol::NEDVelocity>());
+    pushDataToDriver(makePacket<protocol::QuaternionOrientation>());
+    ASSERT_EQ(0, poll());
+    ASSERT_EQ(0, poll());
+    ASSERT_EQ(2, poll());
+    ASSERT_EQ(4, poll());
+}
+
+TEST_F(PollTest, poll_waits_for_a_new_cycle_to_process_packets)
+{
+    { IODRIVERS_BASE_MOCK();
+        EXPECT_PACKET_PERIOD(protocol::QuaternionOrientation::ID, 4);
+        EXPECT_PACKET_PERIOD(protocol::EulerOrientationStandardDeviation::ID, 4);
+        driver.setOrientationPeriod(4);
+    }
+
+    pushDataToDriver(makePacket<protocol::EulerOrientationStandardDeviation>());
+    pushDataToDriver(makePacket<protocol::QuaternionOrientation>());
+    pushDataToDriver(makePacket<protocol::EulerOrientationStandardDeviation>());
+    pushDataToDriver(makePacket<protocol::QuaternionOrientation>());
+    ASSERT_EQ(-1, poll(false));
+    ASSERT_EQ(-1, poll(false));
+    ASSERT_EQ(0, poll(false));
+    ASSERT_EQ(4, poll(false));
+}
+
+TEST_F(PollTest, poll_uses_Time_now_to_process_packets_if_UseDeviceTime_is_false)
+{
+    { IODRIVERS_BASE_MOCK();
+        EXPECT_PACKET_PERIOD(protocol::QuaternionOrientation::ID, 4);
+        EXPECT_PACKET_PERIOD(protocol::EulerOrientationStandardDeviation::ID, 4);
+        driver.setOrientationPeriod(4);
+    }
+
+    pushDataToDriver(makePacket<protocol::EulerOrientationStandardDeviation>());
+    pushDataToDriver(makePacket<protocol::QuaternionOrientation>());
+    pushDataToDriver(makePacket<protocol::EulerOrientationStandardDeviation>());
+    pushDataToDriver(makePacket<protocol::QuaternionOrientation>());
+    ASSERT_EQ(-1, poll(false));
+    ASSERT_EQ(-1, poll(false));
+    base::Time before = base::Time::now();
+    ASSERT_EQ(0, poll(false));
+    base::Time after = base::Time::now();
+    ASSERT_EQ(4, poll(false));
+    ASSERT_TRUE(before <= driver.getCurrentTimestamp());
+    ASSERT_TRUE(driver.getCurrentTimestamp() <= after);
+}
+
+TEST_F(PollTest, poll_ignores_UnixTime_packets_if_UseDeviceTime_is_false)
+{
+    { IODRIVERS_BASE_MOCK();
+        EXPECT_PACKET_PERIOD(protocol::QuaternionOrientation::ID, 4);
+        EXPECT_PACKET_PERIOD(protocol::EulerOrientationStandardDeviation::ID, 4);
+        driver.setOrientationPeriod(4);
+    }
+
+    pushDataToDriver(makePacket<protocol::UnixTime>());
+    pushDataToDriver(makePacket<protocol::EulerOrientationStandardDeviation>());
+    pushDataToDriver(makePacket<protocol::QuaternionOrientation>());
+    pushDataToDriver(makePacket<protocol::EulerOrientationStandardDeviation>());
+    pushDataToDriver(makePacket<protocol::QuaternionOrientation>());
+    ASSERT_EQ(-1, poll(false));
+    ASSERT_EQ(-1, poll(false));
+    ASSERT_EQ(-1, poll(false));
+    base::Time before = base::Time::now();
+    ASSERT_EQ(0, poll(false));
+    base::Time after = base::Time::now();
+    ASSERT_EQ(4, poll(false));
+    ASSERT_TRUE(before <= driver.getCurrentTimestamp());
+    ASSERT_TRUE(driver.getCurrentTimestamp() <= after);
+}
+
+TEST_F(PollTest, poll_uses_UnixTime_packets_to_process_packets_if_UseDeviceTime_is_true)
+{
+    { IODRIVERS_BASE_MOCK();
+        EXPECT_PACKET_PERIOD(protocol::UnixTime::ID, 1);
+        EXPECT_PACKET_PERIOD(protocol::QuaternionOrientation::ID, 4);
+        EXPECT_PACKET_PERIOD(protocol::EulerOrientationStandardDeviation::ID, 4);
+        driver.setUseDeviceTime(true);
+        driver.setOrientationPeriod(4);
+    }
+
+    std::vector<uint8_t> unix_time {
+        1, 2, 3, 4,
+        0x49, 0x86, 0x3, 0 }; // 230 985 microseconds
+    uint64_t expected = 67305985230985;
+
+    pushDataToDriver(makePacket<protocol::QuaternionOrientation>());
+    pushDataToDriver(makePacket<protocol::UnixTime>(unix_time));
+    pushDataToDriver(makePacket<protocol::EulerOrientationStandardDeviation>());
+    pushDataToDriver(makePacket<protocol::QuaternionOrientation>());
+    ASSERT_EQ(-1, poll(false));
+    ASSERT_EQ(0, poll(false));
+    ASSERT_EQ(expected, driver.getCurrentTimestamp().toMicroseconds());
+    ASSERT_EQ(0, poll(false));
+    ASSERT_EQ(4, poll(false));
+    ASSERT_EQ(expected, driver.getCurrentTimestamp().toMicroseconds());
+}
+
+TEST_F(PollTest, poll_does_not_return_the_period_ID_of_the_UnixTime_packet)
+{
+    { IODRIVERS_BASE_MOCK();
+        EXPECT_PACKET_PERIOD(protocol::QuaternionOrientation::ID, 4);
+        EXPECT_PACKET_PERIOD(protocol::EulerOrientationStandardDeviation::ID, 4);
+        driver.setOrientationPeriod(4);
+    }
+
+    pushDataToDriver(makePacket<protocol::EulerOrientationStandardDeviation>());
+    pushDataToDriver(makePacket<protocol::DeviceInformation>());
+    driver.readDeviceInformation();
+    pushDataToDriver(makePacket<protocol::QuaternionOrientation>());
+    ASSERT_EQ(-1, poll(false));
+    pushDataToDriver(makePacket<protocol::EulerOrientationStandardDeviation>());
+    pushDataToDriver(makePacket<protocol::QuaternionOrientation>());
+    ASSERT_EQ(0, poll(false));
+    ASSERT_EQ(4, poll(false));
+}
+
+TEST_F(DriverTest, synchronous_reading_in_the_middle_of_a_train_does_not_lead_to_reporting_partial_periods)
+{
+    // Whenever a read method is used, it will drop any unintended packages,
+    // which can lead to partially updated structures.
+    //
+    // The driver is supposed to wait for a new full cycle before it's allowed
+    // to process again
 }
 

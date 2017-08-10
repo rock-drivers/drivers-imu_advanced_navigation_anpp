@@ -1,9 +1,6 @@
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
 #include "test_Helpers.hpp"
 #include <advanced_navigation_anpp/Protocol.hpp>
 #include <advanced_navigation_anpp/Driver.hpp>
-#include <iodrivers_base/FixtureGtest.hpp>
 #include <list>
 #include <stdexcept>
 #include <cstring>
@@ -1258,11 +1255,11 @@ TEST(protocol_MagneticCalibrationStatus, unmarshal_throws_if_given_too_much_data
     ASSERT_THROW(MagneticCalibrationStatus::unmarshal(ptr, ptr + MagneticCalibrationStatus::SIZE + 1), std::length_error);
 }
 
-struct protocol_FunctionsTest : ::testing::Test, iodrivers_base::Fixture<advanced_navigation_anpp::Driver>
+struct protocol_FunctionsTest : DriverTestBase
 {
     protocol_FunctionsTest()
     {
-        driver.openURI("test://");
+        openTestURI();
     }
 };
 

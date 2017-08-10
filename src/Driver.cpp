@@ -1,9 +1,7 @@
 #include <advanced_navigation_anpp/Driver.hpp>
 #include <advanced_navigation_anpp/Protocol.hpp>
 #include <base/Timeout.hpp>
-
-#include <iostream>
-#include <iomanip>
+#include <base-logging/Logging.hpp>
 
 using namespace std;
 using namespace advanced_navigation_anpp;
@@ -13,18 +11,28 @@ using Eigen::Map;
 using Eigen::Unaligned;
 
 Driver::Driver()
-    : iodrivers_base::Driver(256 * 10)
+    : iodrivers_base::Driver(protocol::MAX_PACKET_SIZE * 10)
+    , ned2nwu(Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()))
 {
     // Set some sensible default read timeout
     setReadTimeout(base::Time::fromSeconds(1));
+    mLastPackets.resize(protocol::PACKET_ID_COUNT, 0);
+    mPacketPeriods.resize(protocol::PACKET_ID_COUNT, make_pair(0, 0));
+}
+
+void Driver::openURI(std::string const& uri)
+{
+    iodrivers_base::Driver::openURI(uri);
+
+    resetPollSynchronization();
+    std::fill_n(mLastPackets.begin(), protocol::PACKET_ID_COUNT, 0);
+    clearPeriodicPackets();
 }
 
 void Driver::setUseDeviceTime(bool enable)
 {
     int period = enable;
-    Header header =
-        protocol::writePacketPeriod<protocol::UnixTime>(*this, period, false);
-    validateAck(*this, header, getReadTimeout());
+    setPacketPeriod(protocol::UnixTime::ID, period);
     mUseDeviceTime = enable;
 }
 
@@ -36,9 +44,7 @@ bool Driver::getUseDeviceTime() const
 void Driver::clearPeriodicPackets()
 {
     int period = mUseDeviceTime;
-    Header header =
-        protocol::writePacketPeriod<protocol::UnixTime>(*this, period, true);
-    validateAck(*this, header, getReadTimeout());
+    setPacketPeriod(protocol::UnixTime::ID, period, true);
 }
 
 void Driver::reset(RESET_MODE mode)
@@ -151,6 +157,355 @@ void Driver::setConfiguration(Configuration const& conf)
     filter_options.enabled_motion_analysis      = conf.enabled_motion_analysis ? 1 : 0;
     header = protocol::writePacket(*this, filter_options);
     protocol::validateAck(*this, header, getReadTimeout());
+}
+
+base::samples::RigidBodyState Driver::getWorldRigidBodyState() const
+{
+    return mWorld;
+}
+
+base::samples::RigidBodyState Driver::getBodyRigidBodyState() const
+{
+    return mBody;
+}
+
+base::samples::RigidBodyAcceleration Driver::getAcceleration() const
+{
+    return mAcceleration;
+}
+
+base::samples::IMUSensors Driver::getIMUSensors() const
+{
+    return mIMUSensors;
+}
+
+gps_base::Solution Driver::getGNSSSolution() const
+{
+    return mGNSSSolution;
+}
+
+gps_base::SolutionQuality Driver::getGNSSSolutionQuality() const
+{
+    return mGNSSSolutionQuality;
+}
+
+gps_base::SatelliteInfo Driver::getGNSSSatelliteInfo() const
+{
+    return mGNSSSatelliteInfo;
+}
+
+
+void Driver::setPacketPeriod(uint8_t packet_id, uint32_t period, bool clear_existing)
+{
+    Header header = protocol::writePacketPeriod(*this, packet_id, period, clear_existing);
+    protocol::validateAck(*this, header, getReadTimeout());
+
+    if (clear_existing)
+        std::fill(mPacketPeriods.begin(), mPacketPeriods.end(), make_pair(0, 0));
+
+    mPacketPeriods[packet_id] = make_pair(period, period == 0 ? 0 : packet_id);
+    // UnixTime is internal, do not expose its period to the user
+    mPacketPeriods[protocol::UnixTime::ID] = make_pair(0, 0);
+
+    std::pair<int, uint8_t> sortedPeriods[protocol::PACKET_ID_COUNT];
+    std::copy(mPacketPeriods.begin(), mPacketPeriods.end(), sortedPeriods);
+    std::sort(sortedPeriods, sortedPeriods + protocol::PACKET_ID_COUNT);
+
+    auto last = make_pair(0, 0);
+    std::fill_n(mLastPackets.begin(), protocol::PACKET_ID_COUNT, 0);
+    for (auto period_and_id : sortedPeriods)
+    {
+        if (last.first != period_and_id.first)
+            mLastPackets[last.second] = last.first;
+        last = period_and_id;
+    }
+    mLastPackets[last.second] = last.first;
+}
+
+void Driver::setOrientationPeriod(int period, bool with_errors)
+{
+    setPacketPeriod(protocol::QuaternionOrientation::ID, period);
+    int errors_period = with_errors ? period : 0;
+    setPacketPeriod(protocol::EulerOrientationStandardDeviation::ID, errors_period);
+}
+
+void Driver::setNEDVelocityPeriod(int period, bool with_errors)
+{
+    setPacketPeriod(protocol::NEDVelocity::ID, period);
+    int errors_period = with_errors ? period : 0;
+    setPacketPeriod(protocol::NEDVelocityStandardDeviation::ID, errors_period);
+}
+
+void Driver::setAccelerationPeriod(int period)
+{
+    setPacketPeriod(protocol::Acceleration::ID, period);
+}
+
+void Driver::setBodyVelocityPeriod(int period)
+{
+    setPacketPeriod(protocol::BodyVelocity::ID, period);
+}
+
+void Driver::setAngularVelocityPeriod(int period)
+{
+    setPacketPeriod(protocol::AngularVelocity::ID, period);
+}
+
+void Driver::setAngularAccelerationPeriod(int period)
+{
+    setPacketPeriod(protocol::AngularAcceleration::ID, period);
+}
+
+void Driver::setRawSensorsPeriod(int period)
+{
+    setPacketPeriod(protocol::RawSensors::ID, period);
+}
+
+void Driver::setGNSSPeriod(int period)
+{
+    setPacketPeriod(protocol::RawGNSS::ID, period);
+}
+
+void Driver::setGNSSSatelliteSummaryPeriod(int period)
+{
+    setPacketPeriod(protocol::Satellites::ID, period);
+}
+
+void Driver::setGNSSSatelliteDetailsPeriod(int period)
+{
+    setPacketPeriod(protocol::DetailedSatellites::ID, period);
+}
+
+template<typename Packet>
+void Driver::dispatch(uint8_t const* packet, uint8_t const* packet_end)
+{
+    Packet payload = Packet::unmarshal(packet + Header::SIZE, packet_end);
+    process(payload);
+}
+
+void Driver::process(protocol::UnixTime const& payload)
+{
+    if (mUseDeviceTime)
+    {
+        mCurrentTimestamp = base::Time::fromMicroseconds(
+                static_cast<int64_t>(payload.seconds) * base::Time::UsecPerSec +
+                static_cast<int64_t>(payload.microseconds));
+    }
+}
+
+void Driver::process(protocol::QuaternionOrientation const& payload)
+{
+    mWorld.time = mCurrentTimestamp;
+    Eigen::Quaterniond body2ned = Eigen::Quaterniond(
+            payload.im, payload.xyz[0], payload.xyz[1], payload.xyz[2]);
+    mWorld.orientation = ned2nwu * body2ned;
+}
+
+void Driver::process(protocol::EulerOrientationStandardDeviation const& payload)
+{
+    mWorld.time = mCurrentTimestamp;
+
+    Eigen::Matrix3d ned_cov = Eigen::Matrix3d::Zero();
+    ned_cov(0, 0) = payload.rpy[0] * payload.rpy[0];
+    ned_cov(1, 1) = payload.rpy[1] * payload.rpy[1];
+    ned_cov(2, 2) = payload.rpy[2] * payload.rpy[2];
+    mWorld.cov_orientation = ned2nwu * ned_cov;
+}
+
+void Driver::process(protocol::NEDVelocity const& payload)
+{
+    mWorld.time = mCurrentTimestamp;
+    Eigen::Vector3d body2ned_velocity = Eigen::Vector3d(payload.ned[0], payload.ned[1], payload.ned[2]);
+    mWorld.velocity = ned2nwu * body2ned_velocity;
+}
+
+void Driver::process(protocol::NEDVelocityStandardDeviation const& payload)
+{
+    mWorld.time = mCurrentTimestamp;
+    Eigen::Matrix3d ned = Eigen::Matrix3d::Zero();
+    ned(0, 0) = payload.ned[0] * payload.ned[0];
+    ned(1, 1) = payload.ned[1] * payload.ned[1];
+    ned(2, 2) = payload.ned[2] * payload.ned[2];
+    mWorld.cov_velocity = ned2nwu * ned;
+}
+
+void Driver::process(protocol::Acceleration const& payload)
+{
+    mAcceleration.time = mCurrentTimestamp;
+    mAcceleration.acceleration = Eigen::Vector3d(payload.xyz[0], payload.xyz[1], payload.xyz[2]);
+}
+
+void Driver::process(protocol::BodyVelocity const& payload)
+{
+    mBody.time = mCurrentTimestamp;
+    mBody.velocity = Eigen::Vector3d(payload.xyz[0], payload.xyz[1], payload.xyz[2]);
+}
+
+void Driver::process(protocol::AngularVelocity const& payload)
+{
+    mBody.time = mCurrentTimestamp;
+    mBody.angular_velocity =
+        Eigen::Vector3d(payload.xyz[0], payload.xyz[1], payload.xyz[2]);
+}
+
+void Driver::process(protocol::AngularAcceleration const& payload)
+{
+    mAcceleration.time = mCurrentTimestamp;
+    mAcceleration.angular_acceleration =
+        Eigen::Vector3d(payload.xyz[0], payload.xyz[1], payload.xyz[2]);
+}
+
+void Driver::process(protocol::RawSensors const& payload)
+{
+    mIMUSensors.time = mCurrentTimestamp;
+    mIMUSensors.acc = Eigen::Vector3d(
+            payload.accelerometers_xyz[0],
+            payload.accelerometers_xyz[1],
+            payload.accelerometers_xyz[2]);
+    mIMUSensors.gyro = Eigen::Vector3d(
+            payload.gyroscopes_xyz[0],
+            payload.gyroscopes_xyz[1],
+            payload.gyroscopes_xyz[2]);
+    mIMUSensors.mag = Eigen::Vector3d(
+            payload.magnetometers_xyz[0],
+            payload.magnetometers_xyz[1],
+            payload.magnetometers_xyz[2]);
+}
+
+gps_base::GPS_SOLUTION_TYPES gnss_status_anpp2gps_base(uint16_t status)
+{
+    switch(status & protocol::RAW_GNSS_FIX_STATUS_MASK)
+    {
+        case protocol::RAW_GNSS_NO_FIX:
+            return gps_base::NO_SOLUTION;
+        case protocol::RAW_GNSS_2D:
+            return gps_base::AUTONOMOUS_2D;
+        case protocol::RAW_GNSS_3D:
+            return gps_base::AUTONOMOUS;
+        case protocol::RAW_GNSS_SBAS:
+        case protocol::RAW_GNSS_DGPS:
+        case protocol::RAW_GNSS_OMNISTAR:
+            return gps_base::DIFFERENTIAL;
+        case protocol::RAW_GNSS_RTK_FLOAT:
+            return gps_base::RTK_FLOAT;
+        case protocol::RAW_GNSS_RTK_FIXED:
+            return gps_base::RTK_FIXED;
+        default:
+            throw std::invalid_argument("got unexpected status value");
+    }
+}
+
+void Driver::process(protocol::RawGNSS const& payload)
+{
+    mGNSSSolution.time = base::Time::fromMicroseconds(
+            static_cast<uint64_t>(payload.unix_time_seconds) * base::Time::UsecPerSec +
+            static_cast<uint64_t>(payload.unix_time_microseconds));
+    mGNSSSolution.positionType = gnss_status_anpp2gps_base(payload.status);
+    mGNSSSolution.latitude  = payload.lat_lon_z[0];
+    mGNSSSolution.longitude = payload.lat_lon_z[1];
+    mGNSSSolution.altitude = payload.lat_lon_z[2];
+    mGNSSSolution.deviationLatitude  = payload.lat_lon_z_stddev[0];
+    mGNSSSolution.deviationLongitude = payload.lat_lon_z_stddev[1];
+    mGNSSSolution.deviationAltitude  = payload.lat_lon_z_stddev[2];
+}
+
+void Driver::process(protocol::Satellites const& payload)
+{
+    mGNSSSolution.noOfSatellites =
+        payload.gps_satellite_count +
+        payload.glonass_satellite_count +
+        payload.beidou_satellite_count +
+        payload.galileo_satellite_count +
+        payload.sbas_satellite_count;
+
+    mGNSSSolutionQuality.time = mGNSSSolution.time;
+    mGNSSSolutionQuality.hdop = payload.hdop;
+    mGNSSSolutionQuality.vdop = payload.vdop;
+}
+
+void Driver::processDetailedSatellites(uint8_t const* packet, uint8_t const* packet_end)
+{
+    mGNSSSatelliteInfo.time = mCurrentTimestamp;
+    mGNSSSatelliteInfo.knownSatellites.clear();
+
+    std::vector<protocol::SatelliteInfo> satellite_info;
+    protocol::DetailedSatellites::unmarshal(packet + Header::SIZE, packet_end, satellite_info);
+
+    for (auto satellite : satellite_info)
+    {
+        gps_base::Satellite info;
+        info.PRN       = satellite.prn;
+        info.elevation = satellite.elevation;
+        info.azimuth   = satellite.azimuth;
+        info.SNR       = satellite.snr;
+        mGNSSSatelliteInfo.knownSatellites.push_back(info);
+    }
+}
+
+void Driver::setCurrentTimestamp(base::Time const& time)
+{
+    mCurrentTimestamp = time;
+}
+
+base::Time Driver::getCurrentTimestamp() const
+{
+    return mCurrentTimestamp;
+}
+
+void Driver::resetPollSynchronization()
+{
+    mCurrentTimestamp = base::Time();
+    mLastPacketID = 0;
+}
+
+int Driver::poll()
+{
+    uint8_t packet[MAX_PACKET_SIZE];
+    size_t packet_size = readPacket(packet, MAX_PACKET_SIZE);
+
+    Header const& header(reinterpret_cast<Header const&>(*packet));
+    if (mLastPacketID >= header.packet_id)
+    {
+        if (!mUseDeviceTime)
+            mCurrentTimestamp = base::Time::now();
+    }
+    mLastPacketID = header.packet_id;
+
+    if (header.packet_id == protocol::UnixTime::ID)
+    {
+        dispatch<protocol::UnixTime>(packet, packet + packet_size);
+        return mUseDeviceTime ? 0 : -1;
+    }
+
+    // Wait for a new packet train to initialize the packet timestamp
+    if (mCurrentTimestamp.isNull())
+        return -1;
+
+#define POLL_DISPATCH_CASE(packet_name) \
+        case packet_name::ID: \
+            dispatch<packet_name>(packet, packet + packet_size); \
+            break;
+    switch(header.packet_id)
+    {
+        POLL_DISPATCH_CASE(protocol::QuaternionOrientation);
+        POLL_DISPATCH_CASE(protocol::EulerOrientationStandardDeviation);
+        POLL_DISPATCH_CASE(protocol::NEDVelocity);
+        POLL_DISPATCH_CASE(protocol::NEDVelocityStandardDeviation);
+        POLL_DISPATCH_CASE(protocol::Acceleration);
+        POLL_DISPATCH_CASE(protocol::BodyVelocity);
+        POLL_DISPATCH_CASE(protocol::AngularVelocity);
+        POLL_DISPATCH_CASE(protocol::AngularAcceleration);
+        POLL_DISPATCH_CASE(protocol::RawSensors);
+        POLL_DISPATCH_CASE(protocol::RawGNSS);
+        POLL_DISPATCH_CASE(protocol::Satellites);
+        case protocol::DetailedSatellites::ID:
+            processDetailedSatellites(packet, packet + packet_size);
+            break;
+        default:
+            LOG_ERROR_S << "Ignored message of type " << header.packet_id << std::endl;
+    }
+
+    return mLastPackets[header.packet_id];
 }
 
 int Driver::extractPacket(uint8_t const* buffer, size_t buffer_length) const
