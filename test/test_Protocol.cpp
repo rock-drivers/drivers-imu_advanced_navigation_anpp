@@ -187,10 +187,10 @@ TEST(protocol_Acknowledge, unmarshal_fails_if_too_much_data_is_provided_and_does
 TEST(protocol_Request, marshal_copies_the_packet_ids_to_the_output)
 {
     vector<uint8_t> out{ 0, 0, 0 };
-    PACKET_IDS const packet_ids[3] = { ID_PACKET_TIMER_PERIOD, ID_VELOCITY_BODY, ID_VELOCITY_NED };
+    uint8_t const packet_ids[3] = { PacketTimerPeriod::ID, BodyVelocity::ID, NEDVelocity::ID };
     auto out_end = Request().marshal(out.begin(), packet_ids, packet_ids + 3);
     ASSERT_EQ(out_end, out.end());
-    ASSERT_THAT(out, ElementsAre(ID_PACKET_TIMER_PERIOD, ID_VELOCITY_BODY, ID_VELOCITY_NED));
+    ASSERT_THAT(out, ElementsAre(PacketTimerPeriod::ID, BodyVelocity::ID, NEDVelocity::ID));
 }
 
 static_assert(sizeof(BootMode) == BootMode::SIZE, "SIZE and sizeof() do not agree");

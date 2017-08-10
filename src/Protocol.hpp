@@ -106,45 +106,6 @@ namespace advanced_navigation_anpp
             out[7] = (value >> 56) & 0xFF;
         }
 
-        /** ID of packets in the protocol */
-        enum PACKET_IDS
-        {
-            ID_ACK                                = 0,
-            ID_REQUEST                            = 1,
-            ID_BOOT_MODE                          = 2,
-            ID_DEVICE_INFO                        = 3,
-            ID_RESTORE_FACTORY_SETTINGS           = 4,
-            ID_RESET                              = 5,
-
-            ID_SYSTEM_STATE                       = 20,
-            ID_UNIX_TIME                          = 21,
-            ID_STATUS                             = 23,
-            ID_POSITION_STD_DEV                   = 24,
-            ID_VELOCITY_STD_DEV                   = 25,
-            ID_QUATERNION_STD_DEV                 = 27,
-            ID_RAW_SENSORS                        = 28,
-            ID_RAW_GNSS                           = 29,
-            ID_SATELLITES                         = 30,
-            ID_POSITION_GEODETIC                  = 31,
-            ID_VELOCITY_NED                       = 35,
-            ID_VELOCITY_BODY                      = 36,
-            ID_ACCELERATION_BODY                  = 37,
-            ID_ORIENTATION_QUATERNION             = 40,
-            ID_VELOCITY_ANGULAR                   = 42,
-            ID_ACCELERATION_ANGULAR               = 43,
-            ID_LOCAL_MAGNETIC_FIELD               = 50,
-            ID_GEOID_HEIGHT                       = 54,
-
-            ID_PACKET_TIMER_PERIOD                = 180,
-            ID_PACKETS_PERIOD                     = 181,
-            ID_BAUD_RATES                         = 182,
-            ID_INSTALLATION_ALIGNMENT             = 185,
-            ID_FILTER_BASIC_OPTIONS               = 186,
-            ID_FILTER_ADVANCED_OPTIONS            = 187,
-            ID_MAGNETIC_CALIBRATION_VALUES        = 189,
-            ID_MAGNETIC_CALIBRATION_CONFIGURATION = 190,
-            ID_MAGNETIC_CALIBRATION_STATUS        = 191
-        };
 
         /** Generic packet header
          *
