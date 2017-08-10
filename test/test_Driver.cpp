@@ -185,10 +185,11 @@ TEST_F(DriverTest, readConfiguration_queries_the_information_and_returns_the_unm
     filter_options[0] = 1;
     filter_options[1] = VEHICLE_3D_UNDERWATER;
     filter_options[2] = 1;
-    filter_options[4] = 0;
-    filter_options[5] = 1;
-    filter_options[6] = 0;
-    filter_options[7] = 1;
+    filter_options[3] = 0;
+    filter_options[4] = 1;
+    filter_options[5] = 0;
+    filter_options[6] = 1;
+    filter_options[7] = 0;
     std::vector<uint8_t> magnetic_calibration { MAGNETIC_CALIBRATION_2D_IN_PROGRESS };
     for (int i = 0; i < 12; ++i)
         vector_concat(magnetic_calibration, TEST_FP4[i].binary);
@@ -211,10 +212,11 @@ TEST_F(DriverTest, readConfiguration_queries_the_information_and_returns_the_unm
             conf.gnss_antenna_offset);
     ASSERT_EQ(VEHICLE_3D_UNDERWATER, conf.vehicle_type);
     ASSERT_EQ(true, conf.enabled_internal_gnss);
-    ASSERT_EQ(false, conf.enabled_atmospheric_altitude);
-    ASSERT_EQ(true, conf.enabled_velocity_heading);
-    ASSERT_EQ(false, conf.enabled_reversing_detection);
-    ASSERT_EQ(true, conf.enabled_motion_analysis);
+    ASSERT_EQ(false, conf.enabled_dual_antenna_heading);
+    ASSERT_EQ(true, conf.enabled_atmospheric_altitude);
+    ASSERT_EQ(false, conf.enabled_velocity_heading);
+    ASSERT_EQ(true, conf.enabled_reversing_detection);
+    ASSERT_EQ(false, conf.enabled_motion_analysis);
 
     ASSERT_EQ(MAGNETIC_CALIBRATION_2D_IN_PROGRESS, conf.magnetic_calibration_status);
     ASSERT_EQ(base::Vector3d(TEST_FP4[0].fp, TEST_FP4[1].fp, TEST_FP4[2].fp), conf.hard_iron_bias);
@@ -231,10 +233,11 @@ TEST_F(DriverTest, setConfiguration_applies_the_configuration)
     conf.gnss_antenna_offset = Eigen::Vector3d(TEST_FP4[0].fp, TEST_FP4[1].fp, TEST_FP4[2].fp);
     conf.vehicle_type                 = VEHICLE_3D_UNDERWATER;
     conf.enabled_internal_gnss        = true;
-    conf.enabled_atmospheric_altitude = false;
-    conf.enabled_velocity_heading     = true;
-    conf.enabled_reversing_detection  = false;
-    conf.enabled_motion_analysis      = true;
+    conf.enabled_dual_antenna_heading = false;
+    conf.enabled_atmospheric_altitude = true;
+    conf.enabled_velocity_heading     = false;
+    conf.enabled_reversing_detection  = true;
+    conf.enabled_motion_analysis      = false;
 
     auto raw_packet_timer_period = makePacket<protocol::PacketTimerPeriod>({ 0, 1, 0xe0, 0x2e });
     EXPECT_REPLY(raw_packet_timer_period,
@@ -253,7 +256,7 @@ TEST_F(DriverTest, setConfiguration_applies_the_configuration)
             makeAcknowledge(raw_alignment, ACK_SUCCESS));
 
     auto raw_filter_options = makePacket<protocol::FilterOptions>({
-            0, 5, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+            0, 5, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
     EXPECT_REPLY(raw_filter_options,
             makeAcknowledge(raw_filter_options, ACK_SUCCESS));
 

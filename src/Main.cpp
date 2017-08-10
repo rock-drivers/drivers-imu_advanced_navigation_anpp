@@ -145,6 +145,7 @@ int main(int argc, char** argv)
             << "Filter Configuration:\n"
             << "  Vehicle Type:         " << enumToString(conf.vehicle_type) << "\n"
             << "  Internal GNSS:        " << (conf.enabled_internal_gnss ? "yes" : "no") << "\n"
+            << "  Dual Antenna Heading: " << (conf.enabled_dual_antenna_heading ? "yes" : "no") << "\n"
             << "  Atmospheric Altitude: " << (conf.enabled_atmospheric_altitude ? "yes" : "no") << "\n"
             << "  Velocity Heading:     " << (conf.enabled_velocity_heading ? "yes" : "no") << "\n"
             << "  Reversing Detection:  " << (conf.enabled_reversing_detection ? "yes" : "no") << "\n"

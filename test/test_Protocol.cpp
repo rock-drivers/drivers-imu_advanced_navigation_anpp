@@ -1117,13 +1117,14 @@ TEST(protocol_FilterOptions, marshal)
     data.permanent                    = 1;
     data.vehicle_type                 = 2;
     data.enabled_internal_gnss        = 3;
-    data.enabled_atmospheric_altitude = 4;
-    data.enabled_velocity_heading     = 5;
-    data.enabled_reversing_detection  = 6;
-    data.enabled_motion_analysis      = 7;
+    data.enabled_dual_antenna_heading = 4;
+    data.enabled_atmospheric_altitude = 5;
+    data.enabled_velocity_heading     = 6;
+    data.enabled_reversing_detection  = 7;
+    data.enabled_motion_analysis      = 8;
 
     uint8_t expected[FilterOptions::SIZE] =
-    { 1, 2, 3, 0, 4, 5, 6, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    { 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     uint8_t marshalled[FilterOptions::SIZE];
     auto out = data.marshal(marshalled);
@@ -1137,13 +1138,14 @@ TEST(protocol_FilterOptions, unmarshal)
     expected.permanent                    = 0;
     expected.vehicle_type                 = 2;
     expected.enabled_internal_gnss        = 3;
-    expected.enabled_atmospheric_altitude = 4;
-    expected.enabled_velocity_heading     = 5;
-    expected.enabled_reversing_detection  = 6;
-    expected.enabled_motion_analysis      = 7;
+    expected.enabled_dual_antenna_heading = 4;
+    expected.enabled_atmospheric_altitude = 5;
+    expected.enabled_velocity_heading     = 6;
+    expected.enabled_reversing_detection  = 7;
+    expected.enabled_motion_analysis      = 8;
 
     uint8_t marshalled[FilterOptions::SIZE] =
-    { 1, 2, 3, 0, 4, 5, 6, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    { 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     FilterOptions out = FilterOptions::unmarshal(
             marshalled, marshalled + FilterOptions::SIZE);
