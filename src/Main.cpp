@@ -98,7 +98,10 @@ int main(int argc, char** argv)
         std::cerr
             << "Usage: imu_advanced_navigation_anpp_ctl URI COMMAND [args]\n"
             << "Known commands:\n"
-            << "  info\n";
+            << "  info\n"
+            << "  reset-cold\n"
+            << "  reset-hot\n"
+            << "  reset-factory\n";
         return 1;
     }
 
