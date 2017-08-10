@@ -22,8 +22,10 @@ namespace imu_advanced_navigation_anpp
         uint8_t const packet_id;
         ACK_RESULTS const result;
 
+        static std::string resultToString(ACK_RESULTS);
+
         AcknowledgeFailure(uint8_t packet_id, ACK_RESULTS result)
-            : std::runtime_error("received failure after having sent a configuration change")
+            : std::runtime_error("received failure after having sent a configuration change: " + resultToString(result))
             , packet_id(packet_id)
             , result(result) {}
     };
