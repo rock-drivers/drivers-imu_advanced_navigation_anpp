@@ -1,7 +1,7 @@
 #ifndef ADVANCED_NAVIGATION_ANPP_EXCEPTIONS_HPP
 #define ADVANCED_NAVIGATION_ANPP_EXCEPTIONS_HPP
 
-#include <imu_advanced_navigation_anpp/Types.hpp>
+#include <stdexcept>
 
 namespace imu_advanced_navigation_anpp
 {

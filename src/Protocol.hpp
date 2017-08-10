@@ -10,7 +10,8 @@
 #include <base/Timeout.hpp>
 #include <iodrivers_base/Exceptions.hpp>
 
-#include <imu_advanced_navigation_anpp/Types.hpp>
+#include <imu_advanced_navigation_anpp/Constants.hpp>
+#include <imu_advanced_navigation_anpp/DeviceInformation.hpp>
 #include <imu_advanced_navigation_anpp/Exceptions.hpp>
 
 namespace imu_advanced_navigation_anpp

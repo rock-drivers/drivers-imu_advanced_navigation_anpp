@@ -1,7 +1,10 @@
 #ifndef ADVANCED_NAVIGATION_ANPP_DRIVER_HPP
 #define ADVANCED_NAVIGATION_ANPP_DRIVER_HPP
 
-#include <imu_advanced_navigation_anpp/Types.hpp>
+#include <imu_advanced_navigation_anpp/DeviceInformation.hpp>
+#include <imu_advanced_navigation_anpp/Status.hpp>
+#include <imu_advanced_navigation_anpp/Configuration.hpp>
+#include <imu_advanced_navigation_anpp/CurrentConfiguration.hpp>
 #include <iodrivers_base/Driver.hpp>
 #include <base/samples/RigidBodyState.hpp>
 #include <base/samples/RigidBodyAcceleration.hpp>

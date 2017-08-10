@@ -1,21 +1,8 @@
-#ifndef ADVANCED_NAVIGATION_ANPP_TYPES_HPP
-#define ADVANCED_NAVIGATION_ANPP_TYPES_HPP
-
-#include <base/Time.hpp>
-#include <base/Eigen.hpp>
+#ifndef ADVANCED_NAVIGATION_ANPP_CONSTANTS_HPP
+#define ADVANCED_NAVIGATION_ANPP_CONSTANTS_HPP
 
 namespace imu_advanced_navigation_anpp
 {
-    struct DeviceInformation
-    {
-        uint32_t software_version;
-        uint32_t device_id;
-        uint32_t hardware_revision;
-        uint32_t serial_number_part0;
-        uint32_t serial_number_part1;
-        uint32_t serial_number_part2;
-    } __attribute__((packed));
-
     enum SYSTEM_STATUS
     {
         SYSTEM_FAILURE                    = 0x0001,
@@ -101,41 +88,6 @@ namespace imu_advanced_navigation_anpp
         MAGNETIC_CALIBRATION_ERROR_SENSOR_SYSTEM_ERROR,
         MAGNETIC_CALIBRATION_ERROR_SENSOR_INTERFERENCE_ERROR
     };
-
-    struct Status
-    {
-        uint16_t system_status;
-
-        bool orientation_initialized;
-        bool navigation_initialized;
-        bool heading_initialized;
-        bool utc_initialized;
-
-        GNSS_STATUS gnss_status;
-    };
-
-    struct Configuration
-    {
-        bool utc_synchronization;
-        base::Time packet_timer_period;
-
-        base::Vector3d gnss_antenna_offset;
-
-        VEHICLE_TYPES vehicle_type;
-        bool enabled_internal_gnss;
-        bool enabled_atmospheric_altitude;
-        bool enabled_velocity_heading;
-        bool enabled_reversing_detection;
-        bool enabled_motion_analysis;
-    };
-
-    struct CurrentConfiguration : public Configuration
-    {
-        MAGNETIC_CALIBRATION_STATUS magnetic_calibration_status;
-        base::Vector3d hard_iron_bias;
-        base::Matrix3d soft_iron_transformation;
-    };
 }
 
 #endif
-
