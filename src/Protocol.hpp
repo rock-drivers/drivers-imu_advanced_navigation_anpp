@@ -489,8 +489,8 @@ namespace advanced_navigation_anpp
             static constexpr int SIZE = 48;
 
             float accelerometers_xyz[3];
-            float gyroscope_xyz[3];
-            float magnetometer_xyz[3];
+            float gyroscopes_xyz[3];
+            float magnetometers_xyz[3];
             float imu_temperature_C;
             float pressure;
             float pressure_temperature_C;
@@ -505,8 +505,8 @@ namespace advanced_navigation_anpp
                 for (int i = 0; i < 3; ++i)
                 {
                     out.accelerometers_xyz[i] = read32<float>(begin + 0 + 4 * i);
-                    out.gyroscope_xyz[i]      = read32<float>(begin + 12 + 4 * i);
-                    out.magnetometer_xyz[i]   = read32<float>(begin + 24 + 4 * i);
+                    out.gyroscopes_xyz[i]      = read32<float>(begin + 12 + 4 * i);
+                    out.magnetometers_xyz[i]   = read32<float>(begin + 24 + 4 * i);
                 }
 
                 out.imu_temperature_C = read32<float>(begin + 36);
