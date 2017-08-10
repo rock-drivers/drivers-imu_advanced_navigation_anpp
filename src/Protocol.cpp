@@ -7,6 +7,40 @@ using namespace std;
 using namespace advanced_navigation_anpp;
 using namespace advanced_navigation_anpp::protocol;
 
+uint8_t const protocol::Acknowledge::ID;
+uint8_t const protocol::Request::ID;
+uint8_t const protocol::BootMode::ID;
+uint8_t const protocol::DeviceInformation::ID;
+uint8_t const protocol::RestoreFactorySettings::ID;
+uint8_t const protocol::HotStartReset::ID;
+uint8_t const protocol::ColdStartReset::ID;
+uint8_t const protocol::SystemState::ID;
+uint8_t const protocol::UnixTime::ID;
+uint8_t const protocol::Status::ID;
+uint8_t const protocol::GeodeticPositionStandardDeviation::ID;
+uint8_t const protocol::NEDVelocityStandardDeviation::ID;
+uint8_t const protocol::EulerOrientationStandardDeviation::ID;
+uint8_t const protocol::RawSensors::ID;
+uint8_t const protocol::RawGNSS::ID;
+uint8_t const protocol::Satellites::ID;
+uint8_t const protocol::DetailedSatellites::ID;
+uint8_t const protocol::NEDVelocity::ID;
+uint8_t const protocol::BodyVelocity::ID;
+uint8_t const protocol::Acceleration::ID;
+uint8_t const protocol::BodyAcceleration::ID;
+uint8_t const protocol::QuaternionOrientation::ID;
+uint8_t const protocol::AngularVelocity::ID;
+uint8_t const protocol::AngularAcceleration::ID;
+uint8_t const protocol::LocalMagneticField::ID;
+uint8_t const protocol::PacketTimerPeriod::ID;
+uint8_t const protocol::PacketPeriods::ID;
+uint8_t const protocol::BaudRates::ID;
+uint8_t const protocol::Alignment::ID;
+uint8_t const protocol::FilterOptions::ID;
+uint8_t const protocol::MagneticCalibrationValues::ID;
+uint8_t const protocol::MagneticCalibrationConfiguration::ID;
+uint8_t const protocol::MagneticCalibrationStatus::ID;
+
 Header::Header()
     : header_checksum(1)
     , packet_id(0)
