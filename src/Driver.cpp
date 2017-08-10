@@ -1,11 +1,11 @@
-#include <advanced_navigation_anpp/Driver.hpp>
-#include <advanced_navigation_anpp/Protocol.hpp>
+#include <imu_advanced_navigation_anpp/Driver.hpp>
+#include <imu_advanced_navigation_anpp/Protocol.hpp>
 #include <base/Timeout.hpp>
 #include <base-logging/Logging.hpp>
 
 using namespace std;
-using namespace advanced_navigation_anpp;
-using advanced_navigation_anpp::protocol::Header;
+using namespace imu_advanced_navigation_anpp;
+using imu_advanced_navigation_anpp::protocol::Header;
 
 using Eigen::Map;
 using Eigen::Unaligned;

@@ -3,8 +3,8 @@
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include <advanced_navigation_anpp/Protocol.hpp>
-#include <advanced_navigation_anpp/Driver.hpp>
+#include <imu_advanced_navigation_anpp/Protocol.hpp>
+#include <imu_advanced_navigation_anpp/Driver.hpp>
 #include <iodrivers_base/FixtureGTest.hpp>
 
 inline void RAW_SET(uint8_t* begin, std::vector<uint8_t> bytes)
@@ -57,7 +57,7 @@ static FPValue<double> TEST_FP8[] =
 template<typename Packet>
 std::vector<uint8_t> makeQuery()
 {
-    using namespace advanced_navigation_anpp::protocol;
+    using namespace imu_advanced_navigation_anpp::protocol;
 
     std::vector<uint8_t> result(Header::SIZE + 1);
     uint8_t id = Packet::ID;
@@ -69,7 +69,7 @@ std::vector<uint8_t> makeQuery()
 template<typename Packet>
 std::vector<uint8_t> makePacket(std::vector<uint8_t> const& payload)
 {
-    using namespace advanced_navigation_anpp::protocol;
+    using namespace imu_advanced_navigation_anpp::protocol;
 
     Header header(Packet::ID, &payload[0], &payload[payload.size()]);
     uint8_t const* header_ptr = reinterpret_cast<uint8_t const*>(&header);
@@ -82,40 +82,40 @@ std::vector<uint8_t> makePacket(std::vector<uint8_t> const& payload)
 template<typename Packet>
 std::vector<uint8_t> makePacket()
 {
-    using namespace advanced_navigation_anpp::protocol;
+    using namespace imu_advanced_navigation_anpp::protocol;
 
     std::vector<uint8_t> payload(Packet::SIZE, 0);
     return makePacket<Packet>(payload);
 }
 
-inline std::vector<uint8_t> makeAcknowledge(std::vector<uint8_t> const& packet, advanced_navigation_anpp::ACK_RESULTS result)
+inline std::vector<uint8_t> makeAcknowledge(std::vector<uint8_t> const& packet, imu_advanced_navigation_anpp::ACK_RESULTS result)
 {
-    return makePacket<advanced_navigation_anpp::protocol::Acknowledge>(
+    return makePacket<imu_advanced_navigation_anpp::protocol::Acknowledge>(
             { packet[1], packet[3], packet[4], static_cast<uint8_t>(result) });
 }
 
-struct DriverTestBase : ::testing::Test, iodrivers_base::Fixture<advanced_navigation_anpp::Driver>
+struct DriverTestBase : ::testing::Test, iodrivers_base::Fixture<imu_advanced_navigation_anpp::Driver>
 {
     void openTestURI()
     { IODRIVERS_BASE_MOCK();
-        using namespace advanced_navigation_anpp::protocol;
+        using namespace imu_advanced_navigation_anpp::protocol;
 
         std::vector<uint8_t> clearPacket =
             makePacket<PacketPeriods>({ 0, 1, UnixTime::ID, 0, 0, 0, 0 });
         EXPECT_REPLY(
                 clearPacket,
-                makeAcknowledge(clearPacket, advanced_navigation_anpp::ACK_SUCCESS));
+                makeAcknowledge(clearPacket, imu_advanced_navigation_anpp::ACK_SUCCESS));
         driver.openURI("test://");
     }
 
     void EXPECT_PACKET_PERIOD(uint8_t packet_id, uint8_t period)
     {
-        using namespace advanced_navigation_anpp::protocol;
+        using namespace imu_advanced_navigation_anpp::protocol;
         std::vector<uint8_t> packet =
             makePacket<PacketPeriods>({ 0, 0, packet_id, period, 0, 0, 0 });
         EXPECT_REPLY(
                 packet,
-                makeAcknowledge(packet, advanced_navigation_anpp::ACK_SUCCESS));
+                makeAcknowledge(packet, imu_advanced_navigation_anpp::ACK_SUCCESS));
     }
 
 };

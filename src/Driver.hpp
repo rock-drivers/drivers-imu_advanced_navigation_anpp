@@ -1,14 +1,14 @@
 #ifndef ADVANCED_NAVIGATION_ANPP_DRIVER_HPP
 #define ADVANCED_NAVIGATION_ANPP_DRIVER_HPP
 
-#include <advanced_navigation_anpp/Types.hpp>
+#include <imu_advanced_navigation_anpp/Types.hpp>
 #include <iodrivers_base/Driver.hpp>
 #include <base/samples/RigidBodyState.hpp>
 #include <base/samples/RigidBodyAcceleration.hpp>
 #include <base/samples/IMUSensors.hpp>
 #include <gps_base/BaseTypes.hpp>
 
-namespace advanced_navigation_anpp 
+namespace imu_advanced_navigation_anpp 
 {
     enum RESET_MODE
     {

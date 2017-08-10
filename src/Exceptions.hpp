@@ -1,9 +1,9 @@
 #ifndef ADVANCED_NAVIGATION_ANPP_EXCEPTIONS_HPP
 #define ADVANCED_NAVIGATION_ANPP_EXCEPTIONS_HPP
 
-#include <advanced_navigation_anpp/Types.hpp>
+#include <imu_advanced_navigation_anpp/Types.hpp>
 
-namespace advanced_navigation_anpp
+namespace imu_advanced_navigation_anpp
 {
     /** Acknowledge result codes */
     enum ACK_RESULTS

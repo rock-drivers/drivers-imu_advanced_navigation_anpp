@@ -1,11 +1,11 @@
-#include <advanced_navigation_anpp/Protocol.hpp>
+#include <imu_advanced_navigation_anpp/Protocol.hpp>
 #include <boost/crc.hpp>
 #include <cstddef>
 #include <stdexcept>
 
 using namespace std;
-using namespace advanced_navigation_anpp;
-using namespace advanced_navigation_anpp::protocol;
+using namespace imu_advanced_navigation_anpp;
+using namespace imu_advanced_navigation_anpp::protocol;
 
 uint8_t const protocol::Acknowledge::ID;
 uint8_t const protocol::Request::ID;

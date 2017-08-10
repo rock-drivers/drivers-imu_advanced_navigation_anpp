@@ -4,7 +4,7 @@
 #include <base/Time.hpp>
 #include <base/Eigen.hpp>
 
-namespace advanced_navigation_anpp
+namespace imu_advanced_navigation_anpp
 {
     struct DeviceInformation
     {

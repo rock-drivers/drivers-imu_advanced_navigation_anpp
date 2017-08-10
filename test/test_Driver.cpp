@@ -1,10 +1,10 @@
 #include "test_Helpers.hpp"
-#include <advanced_navigation_anpp/Driver.hpp>
-#include <advanced_navigation_anpp/Protocol.hpp>
+#include <imu_advanced_navigation_anpp/Driver.hpp>
+#include <imu_advanced_navigation_anpp/Protocol.hpp>
 
 using namespace std;
-using namespace advanced_navigation_anpp;
-using advanced_navigation_anpp::protocol::Header;
+using namespace imu_advanced_navigation_anpp;
+using imu_advanced_navigation_anpp::protocol::Header;
 using ::testing::ElementsAre;
 using ::testing::ContainerEq;
 

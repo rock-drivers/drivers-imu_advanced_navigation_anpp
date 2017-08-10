@@ -10,10 +10,10 @@
 #include <base/Timeout.hpp>
 #include <iodrivers_base/Exceptions.hpp>
 
-#include <advanced_navigation_anpp/Types.hpp>
-#include <advanced_navigation_anpp/Exceptions.hpp>
+#include <imu_advanced_navigation_anpp/Types.hpp>
+#include <imu_advanced_navigation_anpp/Exceptions.hpp>
 
-namespace advanced_navigation_anpp
+namespace imu_advanced_navigation_anpp
 {
     /** Implementation of the ANPP protocol itself
      *
@@ -275,7 +275,7 @@ namespace advanced_navigation_anpp
         } __attribute__((packed));
 
         /** Device information */
-        struct DeviceInformation : public advanced_navigation_anpp::DeviceInformation
+        struct DeviceInformation : public imu_advanced_navigation_anpp::DeviceInformation
         {
             static constexpr uint8_t ID = 3;
             static constexpr int SIZE = 24;

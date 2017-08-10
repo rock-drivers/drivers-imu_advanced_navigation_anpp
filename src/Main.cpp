@@ -1,9 +1,9 @@
 #include <iostream>
 #include <iomanip>
-#include <advanced_navigation_anpp/Driver.hpp>
+#include <imu_advanced_navigation_anpp/Driver.hpp>
 
 using namespace std;
-using namespace advanced_navigation_anpp;
+using namespace imu_advanced_navigation_anpp;
 
 #define ENUM_TO_STRING(name) \
     case name: return #name;
