@@ -45,6 +45,10 @@ void Driver::clearPeriodicPackets()
 {
     int period = mUseDeviceTime;
     setPacketPeriod(protocol::UnixTime::ID, period, true);
+    mWorld = base::samples::RigidBodyState();
+    mBody  = base::samples::RigidBodyState();
+    mAcceleration.acceleration = base::unknown<double>() * Eigen::Vector3d::Ones();
+    mAcceleration.angular_acceleration = base::unknown<double>() * Eigen::Vector3d::Ones();
 }
 
 void Driver::reset(RESET_MODE mode)
@@ -249,6 +253,11 @@ void Driver::setOrientationPeriod(int period, bool with_errors)
     setPacketPeriod(protocol::QuaternionOrientation::ID, period);
     int errors_period = with_errors ? period : 0;
     setPacketPeriod(protocol::EulerOrientationStandardDeviation::ID, errors_period);
+
+    if (period == 0)
+        mWorld.invalidateOrientation();
+    if (errors_period == 0)
+        mWorld.invalidateOrientationCovariance();
 }
 
 void Driver::setNEDVelocityPeriod(int period, bool with_errors)
@@ -256,26 +265,39 @@ void Driver::setNEDVelocityPeriod(int period, bool with_errors)
     setPacketPeriod(protocol::NEDVelocity::ID, period);
     int errors_period = with_errors ? period : 0;
     setPacketPeriod(protocol::NEDVelocityStandardDeviation::ID, errors_period);
+
+    if (period == 0)
+        mWorld.invalidateVelocity();
+    if (errors_period == 0)
+        mWorld.invalidateVelocityCovariance();
 }
 
 void Driver::setAccelerationPeriod(int period)
 {
     setPacketPeriod(protocol::BodyAcceleration::ID, period);
+    if (period == 0)
+        mAcceleration.acceleration = base::unknown<double>() * Eigen::Vector3d::Ones();
 }
 
 void Driver::setBodyVelocityPeriod(int period)
 {
     setPacketPeriod(protocol::BodyVelocity::ID, period);
+    if (period == 0)
+        mBody.invalidateVelocity();
 }
 
 void Driver::setAngularVelocityPeriod(int period)
 {
     setPacketPeriod(protocol::AngularVelocity::ID, period);
+    if (period == 0)
+        mBody.invalidateAngularVelocity();
 }
 
 void Driver::setAngularAccelerationPeriod(int period)
 {
     setPacketPeriod(protocol::AngularAcceleration::ID, period);
+    if (period == 0)
+        mAcceleration.angular_acceleration = base::unknown<double>() * Eigen::Vector3d::Ones();
 }
 
 void Driver::setRawSensorsPeriod(int period)
