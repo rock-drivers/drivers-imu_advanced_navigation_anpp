@@ -156,6 +156,16 @@ namespace imu_advanced_navigation_anpp
         /** GNSS satellite information */
         gps_base::SatelliteInfo getGNSSSatelliteInfo() const;
 
+        /** Set the period at which the status should be updated
+         *
+         * Periodic messages are processed by poll().
+         *
+         * This updates the structure as returned by getStatus()
+         *
+         * @param period the period in multiples of the base packet period
+         */
+        void setStatusPeriod(int period);
+
         /** Set the period at which the orientation should be generated
          *
          * Periodic messages are processed by poll().
@@ -166,8 +176,6 @@ namespace imu_advanced_navigation_anpp
          * @param period the period in multiples of the base packet period
          * @param with_errors if true, generate the orientation errors at the
          *   same period. Otherwise, do not generate them
-         *
-         * @see setBasePacketPeriod
          */
         void setOrientationPeriod(int period, bool with_errors = true);
 
@@ -180,8 +188,6 @@ namespace imu_advanced_navigation_anpp
          * getWorldRigidBodyState().
          *
          * @param period the period in multiples of the base packet period
-         *
-         * @see setBasePacketPeriod
          */
         void setNEDVelocityPeriod(int period, bool with_errors = true);
 
@@ -195,8 +201,6 @@ namespace imu_advanced_navigation_anpp
          * getAcceleration().
          *
          * @param period the period in multiples of the base packet period
-         *
-         * @see setBasePacketPeriod
          */
         void setAccelerationPeriod(int period);
 
@@ -209,8 +213,6 @@ namespace imu_advanced_navigation_anpp
          * getBodyRigidBodyState();
          *
          * @param period the period in multiples of the base packet period
-         *
-         * @see setBasePacketPeriod
          */
         void setBodyVelocityPeriod(int period);
 
@@ -223,8 +225,6 @@ namespace imu_advanced_navigation_anpp
          * getBodyRigidBodyState();
          *
          * @param period the period in multiples of the base packet period
-         *
-         * @see setBasePacketPeriod
          */
         void setAngularVelocityPeriod(int period);
 
@@ -237,8 +237,6 @@ namespace imu_advanced_navigation_anpp
          * getAcceleration();
          *
          * @param period the period in multiples of the base packet period
-         *
-         * @see setBasePacketPeriod
          */
         void setAngularAccelerationPeriod(int period);
 
@@ -250,8 +248,6 @@ namespace imu_advanced_navigation_anpp
          * getRawSensors()
          *
          * @param period the period in multiples of the base packet period
-         *
-         * @see setBasePacketPeriod
          */
         void setRawSensorsPeriod(int period);
 
@@ -262,8 +258,6 @@ namespace imu_advanced_navigation_anpp
          * This updates the structure returned by getGNSSolution()
          *
          * @param period the period in multiples of the base packet period
-         *
-         * @see setBasePacketPeriod
          */
         void setGNSSPeriod(int period);
 
@@ -274,8 +268,6 @@ namespace imu_advanced_navigation_anpp
          * This updates the structure returned by getGNSSSolutionQuality()
          *
          * @param period the period in multiples of the base packet period
-         *
-         * @see setBasePacketPeriod
          */
         void setGNSSSatelliteSummaryPeriod(int period);
 
@@ -286,8 +278,6 @@ namespace imu_advanced_navigation_anpp
          * This updates the structure returned by getGNSSSatelliteDetails()
          *
          * @param period the period in multiples of the base packet period
-         *
-         * @see setBasePacketPeriod
          */
         void setGNSSSatelliteDetailsPeriod(int period);
 
