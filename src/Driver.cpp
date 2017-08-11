@@ -49,6 +49,12 @@ void Driver::clearPeriodicPackets()
     mBody  = base::samples::RigidBodyState();
     mAcceleration.acceleration = base::unknown<double>() * Eigen::Vector3d::Ones();
     mAcceleration.angular_acceleration = base::unknown<double>() * Eigen::Vector3d::Ones();
+    mGeodeticPosition.latitude  = base::unknown<double>();
+    mGeodeticPosition.longitude = base::unknown<double>();
+    mGeodeticPosition.altitude  = base::unknown<double>();
+    mGeodeticPosition.deviationLatitude  = base::unknown<double>();
+    mGeodeticPosition.deviationLongitude = base::unknown<double>();
+    mGeodeticPosition.deviationAltitude  = base::unknown<double>();
 }
 
 void Driver::reset(RESET_MODE mode)
@@ -248,6 +254,35 @@ void Driver::setStatusPeriod(int period)
     setPacketPeriod(protocol::Status::ID, period);
 }
 
+void Driver::setUTM(int zone, bool north, Eigen::Vector3d const& local_origin)
+{
+    mUTMConverter.setUTMZone(zone);
+    mUTMConverter.setUTMNorth(north);
+    mUTMConverter.setNWUOrigin(local_origin);
+    updateWorldFromGeodetic();
+}
+
+void Driver::setPositionPeriod(int period, bool with_errors)
+{
+    setPacketPeriod(protocol::GeodeticPosition::ID, period);
+    int errors_period = with_errors ? period : 0;
+    setPacketPeriod(protocol::GeodeticPositionStandardDeviation::ID, errors_period);
+
+    if (period == 0)
+    {
+        mGeodeticPosition.latitude  = base::unknown<float>();
+        mGeodeticPosition.longitude = base::unknown<float>();
+        mGeodeticPosition.altitude  = base::unknown<float>();
+    }
+    if (errors_period == 0)
+    {
+        mGeodeticPosition.deviationLatitude  = base::unknown<float>();
+        mGeodeticPosition.deviationLongitude = base::unknown<float>();
+        mGeodeticPosition.deviationAltitude  = base::unknown<float>();
+    }
+    updateWorldFromGeodetic();
+}
+
 void Driver::setOrientationPeriod(int period, bool with_errors)
 {
     setPacketPeriod(protocol::QuaternionOrientation::ID, period);
@@ -348,6 +383,31 @@ T may_invalidate(T const& value)
     if (value == T::Zero())
         return T::Ones() * base::unknown<double>();
     else return value;
+}
+
+void Driver::updateWorldFromGeodetic()
+{
+    base::samples::RigidBodyState rbs =
+        mUTMConverter.convertToNWU(mGeodeticPosition);
+    mWorld.position     = rbs.position;
+    mWorld.cov_position = rbs.cov_position;
+}
+
+void Driver::process(protocol::GeodeticPositionStandardDeviation const& payload)
+{
+    Eigen::Vector3d variance(
+            payload.lat_lon_z_stddev[0] * payload.lat_lon_z_stddev[0],
+            payload.lat_lon_z_stddev[1] * payload.lat_lon_z_stddev[1],
+            payload.lat_lon_z_stddev[2] * payload.lat_lon_z_stddev[2]);
+    variance = may_invalidate(variance);
+
+    mGeodeticPosition.time = mCurrentTimestamp;
+    mGeodeticPosition.deviationLatitude  = variance.x();
+    mGeodeticPosition.deviationLongitude = variance.y();
+    mGeodeticPosition.deviationAltitude  = variance.z();
+
+    mWorld.time         = mGeodeticPosition.time;
+    updateWorldFromGeodetic();
 }
 
 void Driver::process(protocol::QuaternionOrientation const& payload)
@@ -485,6 +545,20 @@ void Driver::process(protocol::Satellites const& payload)
     mGNSSSolutionQuality.vdop = payload.vdop;
 }
 
+void Driver::process(protocol::GeodeticPosition const& payload)
+{
+    Eigen::Vector3d pos(payload.lat_lon_z[0], payload.lat_lon_z[1], payload.lat_lon_z[2]);
+    pos = may_invalidate(pos);
+
+    mGeodeticPosition.time = mCurrentTimestamp;
+    mGeodeticPosition.latitude  = pos.x();
+    mGeodeticPosition.longitude = pos.y();
+    mGeodeticPosition.altitude  = pos.z();
+
+    mWorld.time         = mGeodeticPosition.time;
+    updateWorldFromGeodetic();
+}
+
 void Driver::process(protocol::NorthSeekingInitializationStatus const& payload)
 {
     mNorthSeekingInitializationStatus.time = mCurrentTimestamp;
@@ -580,6 +654,7 @@ int Driver::poll()
         POLL_DISPATCH_CASE(protocol::RawSensors);
         POLL_DISPATCH_CASE(protocol::RawGNSS);
         POLL_DISPATCH_CASE(protocol::Satellites);
+        POLL_DISPATCH_CASE(protocol::GeodeticPosition);
         POLL_DISPATCH_CASE(protocol::NorthSeekingInitializationStatus);
         case protocol::DetailedSatellites::ID:
             processDetailedSatellites(packet, packet + packet_size);

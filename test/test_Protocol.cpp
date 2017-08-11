@@ -691,6 +691,37 @@ TEST(protocol_NEDVelocity, unmarshal_throws_if_given_too_much_data)
     ASSERT_THROW(NEDVelocity::unmarshal(ptr, ptr + NEDVelocity::SIZE + 1), std::length_error);
 }
 
+static_assert(sizeof(GeodeticPosition) == GeodeticPosition::SIZE, "SIZE and sizeof() do not agree");
+
+TEST(protocol_GeodeticPosition, unmarshal)
+{
+    GeodeticPosition expected;
+    expected.lat_lon_z[0] = TEST_FP8[0].fp;
+    expected.lat_lon_z[1] = TEST_FP8[1].fp;
+    expected.lat_lon_z[2] = TEST_FP8[2].fp;
+
+    uint8_t marshalled[GeodeticPosition::SIZE];
+    RAW_SET(marshalled + 0, TEST_FP8[0].binary );
+    RAW_SET(marshalled + 8, TEST_FP8[1].binary );
+    RAW_SET(marshalled + 16, TEST_FP8[2].binary );
+
+    GeodeticPosition unmarshalled =
+        GeodeticPosition::unmarshal(marshalled, marshalled + GeodeticPosition::SIZE);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(GeodeticPosition)));
+}
+
+TEST(protocol_GeodeticPosition, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(GeodeticPosition::unmarshal(ptr, ptr + 11), std::length_error);
+}
+
+TEST(protocol_GeodeticPosition, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(GeodeticPosition::unmarshal(ptr, ptr + 13), std::length_error);
+}
+
 static_assert(sizeof(BodyVelocity) == BodyVelocity::SIZE, "SIZE and sizeof() do not agree");
 
 TEST(protocol_BodyVelocity, unmarshal)

@@ -686,6 +686,26 @@ namespace imu_advanced_navigation_anpp
             }
         } __attribute__((packed));
 
+        struct GeodeticPosition
+        {
+            static constexpr uint8_t ID = 32;
+            static constexpr int SIZE = 24;
+
+            double lat_lon_z[3];
+
+            template<typename InputIterator>
+            static GeodeticPosition unmarshal(InputIterator begin, InputIterator end)
+            {
+                if ((end - begin) != GeodeticPosition::SIZE)
+                    throw std::length_error("GeodeticPosition::unmarshal unexpected buffer size");
+
+                GeodeticPosition out;
+                for (int i = 0; i < 3; ++i)
+                    out.lat_lon_z[i] = read64<double>(begin + 8 * i);
+                return out;
+            }
+        } __attribute__((packed));
+
         struct NEDVelocity
         {
             static constexpr uint8_t ID = 35;

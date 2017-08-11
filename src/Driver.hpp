@@ -11,6 +11,7 @@
 #include <base/samples/RigidBodyAcceleration.hpp>
 #include <base/samples/IMUSensors.hpp>
 #include <gps_base/BaseTypes.hpp>
+#include <gps_base/UTMConverter.hpp>
 
 namespace imu_advanced_navigation_anpp 
 {
@@ -30,6 +31,8 @@ namespace imu_advanced_navigation_anpp
     {
         struct UnixTime;
         struct Status;
+        struct GeodeticPositionStandardDeviation;
+        struct GeodeticPosition;
         struct QuaternionOrientation;
         struct EulerOrientationStandardDeviation;
         struct NEDVelocity;
@@ -54,6 +57,7 @@ namespace imu_advanced_navigation_anpp
         base::Time mCurrentTimestamp;
         Eigen::Quaterniond const ned2nwu;
 
+        gps_base::UTMConverter mUTMConverter;
         std::vector<uint32_t> mLastPackets;
         std::vector<std::pair<uint32_t, uint8_t>> mPacketPeriods;
 
@@ -61,11 +65,14 @@ namespace imu_advanced_navigation_anpp
         base::samples::RigidBodyState mBody;
         base::samples::RigidBodyAcceleration mAcceleration;
         base::samples::IMUSensors mIMUSensors;
+        gps_base::Solution mGeodeticPosition;
         gps_base::Solution mGNSSSolution;
         gps_base::SolutionQuality mGNSSSolutionQuality;
         gps_base::SatelliteInfo mGNSSSatelliteInfo;
         Status mStatus;
         NorthSeekingInitializationStatus mNorthSeekingInitializationStatus;
+
+        void updateWorldFromGeodetic();
 
         int extractPacket(uint8_t const* buffer, size_t buffer_size) const;
         void setPacketPeriod(uint8_t packet_id, uint32_t period, bool clear_existing = false);
@@ -74,6 +81,7 @@ namespace imu_advanced_navigation_anpp
         void dispatch(uint8_t const* packet, uint8_t const* packet_end);
         void process(protocol::UnixTime const& payload);
         void process(protocol::Status const& payload);
+        void process(protocol::GeodeticPositionStandardDeviation const& payload);
         void process(protocol::QuaternionOrientation const& payload);
         void process(protocol::EulerOrientationStandardDeviation const& payload);
         void process(protocol::NEDVelocity const& payload);
@@ -85,6 +93,7 @@ namespace imu_advanced_navigation_anpp
         void process(protocol::RawSensors const& payload);
         void process(protocol::RawGNSS const& payload);
         void process(protocol::Satellites const& payload);
+        void process(protocol::GeodeticPosition const& payload);
         void process(protocol::NorthSeekingInitializationStatus const& payload);
         void processDetailedSatellites(uint8_t const* packet, uint8_t const* packet_end);
 
@@ -178,6 +187,27 @@ namespace imu_advanced_navigation_anpp
          * @param period the period in multiples of the base packet period
          */
         void setStatusPeriod(int period);
+
+        /** Set the UTM zone that is used to convert the global position into a
+         * local RBS
+         */
+        void setUTM(int zone, bool north,
+                    Eigen::Vector3d const& local_origin = Eigen::Vector3d::Zero());
+
+        /** Set the period at which the position should be generated
+         *
+         * Periodic messages are processed by poll().
+         *
+         * This updates the world-relative RBS as returned by
+         * getWorldRigidBodyState().
+         *
+         * You must set the UTM position and origin before calling this
+         *
+         * @param period the period in multiples of the base packet period
+         * @param with_errors if true, generate the orientation errors at the
+         *   same period. Otherwise, do not generate them
+         */
+        void setPositionPeriod(int period, bool with_errors = true);
 
         /** Set the period at which the orientation should be generated
          *
