@@ -857,6 +857,36 @@ namespace imu_advanced_navigation_anpp
             }
         } __attribute__((packed));
 
+        struct NorthSeekingInitializationStatus
+        {
+            static constexpr uint8_t ID = 71;
+            static constexpr int SIZE = 28;
+
+            /** Status as one of NORTH_SEEKING_INITIALIZATION_FLAGS */
+            uint16_t flags;
+            uint16_t reserved = 0;
+            uint8_t progress[4];
+            float   current_rotation_angle;
+            float   gyroscope_bias_solution_xyz[3];
+            float   gyroscope_bias_solution_error;
+
+            template<typename InputIterator>
+            static NorthSeekingInitializationStatus unmarshal(InputIterator begin, InputIterator end)
+            {
+                if (end - begin != SIZE)
+                    throw std::length_error("MagneticCalibrationStatus::unmarshal buffer size not the expected size");
+
+                NorthSeekingInitializationStatus out;
+                out.flags = read16<uint16_t>(begin);
+                std::copy_n(begin + 4, 4, out.progress);
+                out.current_rotation_angle = read32<float>(begin + 8);
+                for (int i = 0; i < 3; ++i)
+                    out.gyroscope_bias_solution_xyz[i] = read32<float>(begin + 12 + 4 * i);
+                out.gyroscope_bias_solution_error = read32<float>(begin + 24);
+                return out;
+            }
+        } __attribute__((packed));
+
         struct PacketTimerPeriod
         {
             static constexpr uint8_t ID = 180;

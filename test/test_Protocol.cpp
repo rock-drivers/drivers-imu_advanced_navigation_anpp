@@ -913,6 +913,43 @@ TEST(protocol_LocalMagneticField, unmarshal_throws_if_given_too_much_data)
     ASSERT_THROW(LocalMagneticField::unmarshal(ptr, ptr + LocalMagneticField::SIZE + 1), std::length_error);
 }
 
+static_assert(sizeof(NorthSeekingInitializationStatus) == NorthSeekingInitializationStatus::SIZE, "SIZE and sizeof() do not agree");
+
+TEST(protocol_NorthSeekingInitializationStatus, unmarshal)
+{
+    NorthSeekingInitializationStatus expected;
+    expected.flags = 0x0201;
+    for (int i = 0; i < 4; ++i)
+        expected.progress[i] = i + 3;
+    expected.current_rotation_angle         = TEST_FP4[0].fp;
+    expected.gyroscope_bias_solution_xyz[0] = TEST_FP4[1].fp;
+    expected.gyroscope_bias_solution_xyz[1] = TEST_FP4[2].fp;
+    expected.gyroscope_bias_solution_xyz[2] = TEST_FP4[3].fp;
+    expected.gyroscope_bias_solution_error  = TEST_FP4[4].fp;
+
+    uint8_t marshalled[NorthSeekingInitializationStatus::SIZE];
+    RAW_SET(marshalled + 0,  { 1, 2, 0, 0, 3, 4, 5, 6 });
+    for (int i = 0; i < 5; ++i)
+        RAW_SET(marshalled + 8 + 4 * i,  TEST_FP4[i].binary );
+
+    NorthSeekingInitializationStatus unmarshalled =
+        NorthSeekingInitializationStatus::unmarshal(marshalled, marshalled + NorthSeekingInitializationStatus::SIZE);
+    ASSERT_FALSE(std::memcmp(&expected, &unmarshalled, sizeof(NorthSeekingInitializationStatus)));
+}
+
+TEST(protocol_NorthSeekingInitializationStatus, unmarshal_throws_if_given_too_little_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(NorthSeekingInitializationStatus::unmarshal(ptr, ptr + NorthSeekingInitializationStatus::SIZE - 1), std::length_error);
+}
+
+TEST(protocol_NorthSeekingInitializationStatus, unmarshal_throws_if_given_too_much_data)
+{
+    uint8_t* ptr = nullptr;
+    ASSERT_THROW(NorthSeekingInitializationStatus::unmarshal(ptr, ptr + NorthSeekingInitializationStatus::SIZE + 1), std::length_error);
+}
+
+
 static_assert(sizeof(PacketTimerPeriod) == PacketTimerPeriod::SIZE, "SIZE and sizeof() do not agree");
 
 TEST(protocol_PacketTimerPeriod, marshal)

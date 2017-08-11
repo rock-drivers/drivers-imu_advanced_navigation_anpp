@@ -5,6 +5,7 @@
 #include <imu_advanced_navigation_anpp/Status.hpp>
 #include <imu_advanced_navigation_anpp/Configuration.hpp>
 #include <imu_advanced_navigation_anpp/CurrentConfiguration.hpp>
+#include <imu_advanced_navigation_anpp/NorthSeekingInitializationStatus.hpp>
 #include <iodrivers_base/Driver.hpp>
 #include <base/samples/RigidBodyState.hpp>
 #include <base/samples/RigidBodyAcceleration.hpp>
@@ -40,6 +41,7 @@ namespace imu_advanced_navigation_anpp
         struct RawSensors;
         struct RawGNSS;
         struct Satellites;
+        struct NorthSeekingInitializationStatus;
     }
 
     class Driver : public iodrivers_base::Driver
@@ -63,6 +65,7 @@ namespace imu_advanced_navigation_anpp
         gps_base::SolutionQuality mGNSSSolutionQuality;
         gps_base::SatelliteInfo mGNSSSatelliteInfo;
         Status mStatus;
+        NorthSeekingInitializationStatus mNorthSeekingInitializationStatus;
 
         int extractPacket(uint8_t const* buffer, size_t buffer_size) const;
         void setPacketPeriod(uint8_t packet_id, uint32_t period, bool clear_existing = false);
@@ -82,6 +85,7 @@ namespace imu_advanced_navigation_anpp
         void process(protocol::RawSensors const& payload);
         void process(protocol::RawGNSS const& payload);
         void process(protocol::Satellites const& payload);
+        void process(protocol::NorthSeekingInitializationStatus const& payload);
         void processDetailedSatellites(uint8_t const* packet, uint8_t const* packet_end);
 
     public:
@@ -161,6 +165,9 @@ namespace imu_advanced_navigation_anpp
 
         /** GNSS satellite information */
         gps_base::SatelliteInfo getGNSSSatelliteInfo() const;
+
+        /** GNSS satellite information */
+        NorthSeekingInitializationStatus getNorthSeekingInitializationStatus() const;
 
         /** Set the period at which the status should be updated
          *
@@ -286,6 +293,10 @@ namespace imu_advanced_navigation_anpp
          * @param period the period in multiples of the base packet period
          */
         void setGNSSSatelliteDetailsPeriod(int period);
+
+        /** Set the period at which we receive the north seeking status
+         */
+        void setNorthSeekingInitializationStatusPeriod(int period);
 
         /** Set the current timestamp for packets read by poll()
          *

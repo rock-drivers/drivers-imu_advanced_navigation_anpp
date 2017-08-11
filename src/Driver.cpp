@@ -207,6 +207,10 @@ gps_base::SatelliteInfo Driver::getGNSSSatelliteInfo() const
     return mGNSSSatelliteInfo;
 }
 
+NorthSeekingInitializationStatus Driver::getNorthSeekingInitializationStatus() const
+{
+    return mNorthSeekingInitializationStatus;
+}
 
 void Driver::setPacketPeriod(uint8_t packet_id, uint32_t period, bool clear_existing)
 {
@@ -459,6 +463,25 @@ void Driver::process(protocol::Satellites const& payload)
     mGNSSSolutionQuality.vdop = payload.vdop;
 }
 
+void Driver::process(protocol::NorthSeekingInitializationStatus const& payload)
+{
+    mNorthSeekingInitializationStatus.time = mCurrentTimestamp;
+    mNorthSeekingInitializationStatus.flags = payload.flags;
+    for (int i = 0; i < 4; ++i)
+        mNorthSeekingInitializationStatus.progress[i] =
+            static_cast<float>(payload.progress[i]) / 255;
+
+    mNorthSeekingInitializationStatus.current_rotation_angle =
+        base::Angle::fromRad(payload.current_rotation_angle);
+    mNorthSeekingInitializationStatus.gyroscope_bias =
+        Eigen::Vector3d(
+                payload.gyroscope_bias_solution_xyz[0],
+                payload.gyroscope_bias_solution_xyz[1],
+                payload.gyroscope_bias_solution_xyz[2]);
+    mNorthSeekingInitializationStatus.gyroscope_bias_solution_error =
+        payload.gyroscope_bias_solution_error;
+}
+
 void Driver::processDetailedSatellites(uint8_t const* packet, uint8_t const* packet_end)
 {
     mGNSSSatelliteInfo.time = mCurrentTimestamp;
@@ -535,6 +558,7 @@ int Driver::poll()
         POLL_DISPATCH_CASE(protocol::RawSensors);
         POLL_DISPATCH_CASE(protocol::RawGNSS);
         POLL_DISPATCH_CASE(protocol::Satellites);
+        POLL_DISPATCH_CASE(protocol::NorthSeekingInitializationStatus);
         case protocol::DetailedSatellites::ID:
             processDetailedSatellites(packet, packet + packet_size);
             break;
