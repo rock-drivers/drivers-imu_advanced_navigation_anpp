@@ -73,10 +73,10 @@ base::Time Driver::readTime()
             static_cast<uint64_t>(raw_time.microseconds));
 }
 
-Status Driver::readStatus()
+Status protocol2public(protocol::Status const& raw_status, base::Time const& time)
 {
-    auto raw_status = protocol::query<protocol::Status>(*this);
     Status status;
+    status.time = time;
     status.system_status = raw_status.system_status;
     status.orientation_initialized =
         (raw_status.filter_status & FILTER_ORIENTATION_INITIALIZED) != 0;
@@ -89,6 +89,12 @@ Status Driver::readStatus()
     status.gnss_status =
         static_cast<GNSS_STATUS>(raw_status.filter_status & FILTER_GNSS_FIX_STATUS_MASK);
     return status;
+}
+
+Status Driver::readStatus()
+{
+    auto raw_status = protocol::query<protocol::Status>(*this);
+    return protocol2public(raw_status, base::Time::now());
 }
 
 CurrentConfiguration Driver::readConfiguration()
@@ -161,6 +167,11 @@ void Driver::setConfiguration(Configuration const& conf)
     protocol::validateAck(*this, header, getReadTimeout());
 }
 
+Status Driver::getIMUStatus() const
+{
+    return mStatus;
+}
+
 base::samples::RigidBodyState Driver::getWorldRigidBodyState() const
 {
     return mWorld;
@@ -222,6 +233,11 @@ void Driver::setPacketPeriod(uint8_t packet_id, uint32_t period, bool clear_exis
         last = period_and_id;
     }
     mLastPackets[last.second] = last.first;
+}
+
+void Driver::setStatusPeriod(int period)
+{
+    setPacketPeriod(protocol::Status::ID, period);
 }
 
 void Driver::setOrientationPeriod(int period, bool with_errors)
@@ -293,6 +309,11 @@ void Driver::process(protocol::UnixTime const& payload)
                 static_cast<int64_t>(payload.seconds) * base::Time::UsecPerSec +
                 static_cast<int64_t>(payload.microseconds));
     }
+}
+
+void Driver::process(protocol::Status const& payload)
+{
+    mStatus = protocol2public(payload, mCurrentTimestamp);
 }
 
 void Driver::process(protocol::QuaternionOrientation const& payload)
@@ -489,6 +510,7 @@ int Driver::poll()
             break;
     switch(header.packet_id)
     {
+        POLL_DISPATCH_CASE(protocol::Status);
         POLL_DISPATCH_CASE(protocol::QuaternionOrientation);
         POLL_DISPATCH_CASE(protocol::EulerOrientationStandardDeviation);
         POLL_DISPATCH_CASE(protocol::NEDVelocity);

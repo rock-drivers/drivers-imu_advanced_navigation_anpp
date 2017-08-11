@@ -28,6 +28,7 @@ namespace imu_advanced_navigation_anpp
     namespace protocol
     {
         struct UnixTime;
+        struct Status;
         struct QuaternionOrientation;
         struct EulerOrientationStandardDeviation;
         struct NEDVelocity;
@@ -61,6 +62,7 @@ namespace imu_advanced_navigation_anpp
         gps_base::Solution mGNSSSolution;
         gps_base::SolutionQuality mGNSSSolutionQuality;
         gps_base::SatelliteInfo mGNSSSatelliteInfo;
+        Status mStatus;
 
         int extractPacket(uint8_t const* buffer, size_t buffer_size) const;
         void setPacketPeriod(uint8_t packet_id, uint32_t period, bool clear_existing = false);
@@ -68,6 +70,7 @@ namespace imu_advanced_navigation_anpp
         template<typename Packet>
         void dispatch(uint8_t const* packet, uint8_t const* packet_end);
         void process(protocol::UnixTime const& payload);
+        void process(protocol::Status const& payload);
         void process(protocol::QuaternionOrientation const& payload);
         void process(protocol::EulerOrientationStandardDeviation const& payload);
         void process(protocol::NEDVelocity const& payload);
@@ -130,6 +133,9 @@ namespace imu_advanced_navigation_anpp
 
         /** Read the current configuration */
         void setConfiguration(Configuration const& conf);
+
+        /** The current system+filter status */
+        Status getIMUStatus() const;
 
         /** The NWU position
          */
