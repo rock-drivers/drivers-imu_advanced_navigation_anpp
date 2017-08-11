@@ -316,12 +316,23 @@ void Driver::process(protocol::Status const& payload)
     mStatus = protocol2public(payload, mCurrentTimestamp);
 }
 
+template<typename T>
+T may_invalidate(T const& value)
+{
+    if (value == T::Zero())
+        return T::Ones() * base::unknown<double>();
+    else return value;
+}
+
 void Driver::process(protocol::QuaternionOrientation const& payload)
 {
     mWorld.time = mCurrentTimestamp;
     Eigen::Quaterniond body2ned = Eigen::Quaterniond(
             payload.im, payload.xyz[0], payload.xyz[1], payload.xyz[2]);
-    mWorld.orientation = ned2nwu * body2ned;
+    if (body2ned.w() == 0 && body2ned.x() == 0 && body2ned.y() == 0 && body2ned.z() == 0)
+        mWorld.invalidateOrientation();
+    else
+        mWorld.orientation = ned2nwu * body2ned;
 }
 
 void Driver::process(protocol::EulerOrientationStandardDeviation const& payload)
@@ -332,14 +343,14 @@ void Driver::process(protocol::EulerOrientationStandardDeviation const& payload)
     ned_cov(0, 0) = payload.rpy[0] * payload.rpy[0];
     ned_cov(1, 1) = payload.rpy[1] * payload.rpy[1];
     ned_cov(2, 2) = payload.rpy[2] * payload.rpy[2];
-    mWorld.cov_orientation = ned2nwu * ned_cov;
+    mWorld.cov_orientation = ned2nwu * may_invalidate(ned_cov);
 }
 
 void Driver::process(protocol::NEDVelocity const& payload)
 {
     mWorld.time = mCurrentTimestamp;
     Eigen::Vector3d body2ned_velocity = Eigen::Vector3d(payload.ned[0], payload.ned[1], payload.ned[2]);
-    mWorld.velocity = ned2nwu * body2ned_velocity;
+    mWorld.velocity = ned2nwu * may_invalidate(body2ned_velocity);
 }
 
 void Driver::process(protocol::NEDVelocityStandardDeviation const& payload)
@@ -349,50 +360,52 @@ void Driver::process(protocol::NEDVelocityStandardDeviation const& payload)
     ned(0, 0) = payload.ned[0] * payload.ned[0];
     ned(1, 1) = payload.ned[1] * payload.ned[1];
     ned(2, 2) = payload.ned[2] * payload.ned[2];
-    mWorld.cov_velocity = ned2nwu * ned;
+    mWorld.cov_velocity = ned2nwu * may_invalidate(ned);
 }
 
 void Driver::process(protocol::BodyAcceleration const& payload)
 {
     mAcceleration.time = mCurrentTimestamp;
-    mAcceleration.acceleration = Eigen::Vector3d(payload.xyz[0], payload.xyz[1], payload.xyz[2]);
+    Eigen::Vector3d acceleration = Eigen::Vector3d(payload.xyz[0], payload.xyz[1], payload.xyz[2]);
+    mAcceleration.acceleration = may_invalidate(acceleration);
 }
 
 void Driver::process(protocol::BodyVelocity const& payload)
 {
     mBody.time = mCurrentTimestamp;
-    mBody.velocity = Eigen::Vector3d(payload.xyz[0], payload.xyz[1], payload.xyz[2]);
+    mBody.velocity =
+        may_invalidate(Eigen::Vector3d(payload.xyz[0], payload.xyz[1], payload.xyz[2]));
 }
 
 void Driver::process(protocol::AngularVelocity const& payload)
 {
     mBody.time = mCurrentTimestamp;
     mBody.angular_velocity =
-        Eigen::Vector3d(payload.xyz[0], payload.xyz[1], payload.xyz[2]);
+        may_invalidate(Eigen::Vector3d(payload.xyz[0], payload.xyz[1], payload.xyz[2]));
 }
 
 void Driver::process(protocol::AngularAcceleration const& payload)
 {
     mAcceleration.time = mCurrentTimestamp;
     mAcceleration.angular_acceleration =
-        Eigen::Vector3d(payload.xyz[0], payload.xyz[1], payload.xyz[2]);
+        may_invalidate(Eigen::Vector3d(payload.xyz[0], payload.xyz[1], payload.xyz[2]));
 }
 
 void Driver::process(protocol::RawSensors const& payload)
 {
     mIMUSensors.time = mCurrentTimestamp;
-    mIMUSensors.acc = Eigen::Vector3d(
+    mIMUSensors.acc = may_invalidate(Eigen::Vector3d(
             payload.accelerometers_xyz[0],
             payload.accelerometers_xyz[1],
-            payload.accelerometers_xyz[2]);
-    mIMUSensors.gyro = Eigen::Vector3d(
+            payload.accelerometers_xyz[2]));
+    mIMUSensors.gyro = may_invalidate(Eigen::Vector3d(
             payload.gyroscopes_xyz[0],
             payload.gyroscopes_xyz[1],
-            payload.gyroscopes_xyz[2]);
-    mIMUSensors.mag = Eigen::Vector3d(
+            payload.gyroscopes_xyz[2]));
+    mIMUSensors.mag = may_invalidate(Eigen::Vector3d(
             payload.magnetometers_xyz[0],
             payload.magnetometers_xyz[1],
-            payload.magnetometers_xyz[2]);
+            payload.magnetometers_xyz[2]));
 }
 
 gps_base::GPS_SOLUTION_TYPES gnss_status_anpp2gps_base(uint16_t status)
