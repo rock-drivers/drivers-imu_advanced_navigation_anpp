@@ -652,6 +652,7 @@ int Driver::poll()
         POLL_DISPATCH_CASE(protocol::RawGNSS);
         POLL_DISPATCH_CASE(protocol::Satellites);
         POLL_DISPATCH_CASE(protocol::GeodeticPosition);
+        POLL_DISPATCH_CASE(protocol::GeodeticPositionStandardDeviation);
         POLL_DISPATCH_CASE(protocol::NorthSeekingInitializationStatus);
         case protocol::DetailedSatellites::ID:
             processDetailedSatellites(packet, packet + packet_size);
