@@ -3,6 +3,7 @@
 
 #include <base/Time.hpp>
 #include <base/Angle.hpp>
+#include <base/Float.hpp>
 
 namespace imu_advanced_navigation_anpp
 {
@@ -26,6 +27,12 @@ namespace imu_advanced_navigation_anpp
 
         base::Vector3d gyroscope_bias;
         float gyroscope_bias_solution_error;
+
+        NorthSeekingInitializationStatus()
+            : flags(0)
+            , progress { base::unknown<float>(), base::unknown<float>(), base::unknown<float>(), base::unknown<float>() }
+            , gyroscope_bias(base::unknown<double>(), base::unknown<double>(), base::unknown<double>())
+            , gyroscope_bias_solution_error(base::unknown<float>()) {}
     };
 }
 

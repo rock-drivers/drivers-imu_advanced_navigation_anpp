@@ -5,7 +5,6 @@
 #include <imu_advanced_navigation_anpp/Status.hpp>
 #include <imu_advanced_navigation_anpp/Configuration.hpp>
 #include <imu_advanced_navigation_anpp/CurrentConfiguration.hpp>
-#include <imu_advanced_navigation_anpp/NorthSeekingInitializationStatus.hpp>
 #include <iodrivers_base/Driver.hpp>
 #include <base/samples/RigidBodyState.hpp>
 #include <base/samples/RigidBodyAcceleration.hpp>
@@ -70,7 +69,6 @@ namespace imu_advanced_navigation_anpp
         gps_base::SolutionQuality mGNSSSolutionQuality;
         gps_base::SatelliteInfo mGNSSSatelliteInfo;
         Status mStatus;
-        NorthSeekingInitializationStatus mNorthSeekingInitializationStatus;
 
         void updateWorldFromGeodetic();
 
@@ -174,9 +172,6 @@ namespace imu_advanced_navigation_anpp
 
         /** GNSS satellite information */
         gps_base::SatelliteInfo getGNSSSatelliteInfo() const;
-
-        /** GNSS satellite information */
-        NorthSeekingInitializationStatus getNorthSeekingInitializationStatus() const;
 
         /** Set the period at which the status should be updated
          *
@@ -325,6 +320,8 @@ namespace imu_advanced_navigation_anpp
         void setGNSSSatelliteDetailsPeriod(int period);
 
         /** Set the period at which we receive the north seeking status
+         *
+         * It is reported in the Status structure
          */
         void setNorthSeekingInitializationStatusPeriod(int period);
 

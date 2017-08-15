@@ -55,6 +55,7 @@ void Driver::clearPeriodicPackets()
     mGeodeticPosition.deviationLatitude  = base::unknown<double>();
     mGeodeticPosition.deviationLongitude = base::unknown<double>();
     mGeodeticPosition.deviationAltitude  = base::unknown<double>();
+    mStatus.north_seeking = NorthSeekingInitializationStatus();
 }
 
 void Driver::reset(RESET_MODE mode)
@@ -83,28 +84,21 @@ base::Time Driver::readTime()
             static_cast<uint64_t>(raw_time.microseconds));
 }
 
-Status protocol2public(protocol::Status const& raw_status, base::Time const& time)
+void protocol2public(Status& status, protocol::Status const& raw_status, base::Time const& time)
 {
-    Status status;
     status.time = time;
     status.system_status = raw_status.system_status;
-    status.orientation_initialized =
-        (raw_status.filter_status & FILTER_ORIENTATION_INITIALIZED) != 0;
-    status.navigation_initialized =
-        (raw_status.filter_status & FILTER_NAVIGATION_INITIALIZED) != 0;
-    status.heading_initialized =
-        (raw_status.filter_status & FILTER_HEADING_INITIALIZED) != 0;
-    status.utc_initialized =
-        (raw_status.filter_status & FILTER_UTC_INITIALIZED) != 0;
-    status.gnss_status =
-        static_cast<GNSS_STATUS>(raw_status.filter_status & FILTER_GNSS_FIX_STATUS_MASK);
-    return status;
+    status.filter_status = raw_status.filter_status;
+    status.gnss_solution_status =
+        static_cast<GNSS_STATUS>((raw_status.filter_status >> 4) & 0xF);
 }
 
 Status Driver::readStatus()
 {
     auto raw_status = protocol::query<protocol::Status>(*this);
-    return protocol2public(raw_status, base::Time::now());
+    Status result;
+    protocol2public(result, raw_status, base::Time::now());
+    return result;
 }
 
 CurrentConfiguration Driver::readConfiguration()
@@ -215,11 +209,6 @@ gps_base::SolutionQuality Driver::getGNSSSolutionQuality() const
 gps_base::SatelliteInfo Driver::getGNSSSatelliteInfo() const
 {
     return mGNSSSatelliteInfo;
-}
-
-NorthSeekingInitializationStatus Driver::getNorthSeekingInitializationStatus() const
-{
-    return mNorthSeekingInitializationStatus;
 }
 
 void Driver::setPacketPeriod(uint8_t packet_id, uint32_t period, bool clear_existing)
@@ -355,6 +344,13 @@ void Driver::setGNSSSatelliteDetailsPeriod(int period)
     setPacketPeriod(protocol::DetailedSatellites::ID, period);
 }
 
+void Driver::setNorthSeekingInitializationStatusPeriod(int period)
+{
+    setPacketPeriod(protocol::NorthSeekingInitializationStatus::ID, period);
+    if (period == 0)
+        mStatus.north_seeking = NorthSeekingInitializationStatus();
+}
+
 template<typename Packet>
 void Driver::dispatch(uint8_t const* packet, uint8_t const* packet_end)
 {
@@ -374,7 +370,7 @@ void Driver::process(protocol::UnixTime const& payload)
 
 void Driver::process(protocol::Status const& payload)
 {
-    mStatus = protocol2public(payload, mCurrentTimestamp);
+    protocol2public(mStatus, payload, mCurrentTimestamp);
 }
 
 template<typename T>
@@ -561,20 +557,21 @@ void Driver::process(protocol::GeodeticPosition const& payload)
 
 void Driver::process(protocol::NorthSeekingInitializationStatus const& payload)
 {
-    mNorthSeekingInitializationStatus.time = mCurrentTimestamp;
-    mNorthSeekingInitializationStatus.flags = payload.flags;
+    NorthSeekingInitializationStatus& status = mStatus.north_seeking;
+    status.time = mCurrentTimestamp;
+    status.flags = payload.flags;
     for (int i = 0; i < 4; ++i)
-        mNorthSeekingInitializationStatus.progress[i] =
+        status.progress[i] =
             static_cast<float>(payload.progress[i]) / 255;
 
-    mNorthSeekingInitializationStatus.current_rotation_angle =
+    status.current_rotation_angle =
         base::Angle::fromRad(payload.current_rotation_angle);
-    mNorthSeekingInitializationStatus.gyroscope_bias =
+    status.gyroscope_bias =
         Eigen::Vector3d(
                 payload.gyroscope_bias_solution_xyz[0],
                 payload.gyroscope_bias_solution_xyz[1],
                 payload.gyroscope_bias_solution_xyz[2]);
-    mNorthSeekingInitializationStatus.gyroscope_bias_solution_error =
+    status.gyroscope_bias_solution_error =
         payload.gyroscope_bias_solution_error;
 }
 

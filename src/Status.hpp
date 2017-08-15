@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <base/Time.hpp>
 #include <imu_advanced_navigation_anpp/Constants.hpp>
+#include <imu_advanced_navigation_anpp/NorthSeekingInitializationStatus.hpp>
 
 namespace imu_advanced_navigation_anpp
 {
@@ -23,6 +24,13 @@ namespace imu_advanced_navigation_anpp
         bool navigation_initialized;
         bool heading_initialized;
         bool utc_initialized;
+        /** North seeking process status
+         *
+         * If the north seeking status message is enabled, it is reported here
+         *
+         * @meta bitfield /imu_advanced_navigation_anpp/NORTH_SEEKING_INITIALIZATION_FLAGS
+         */
+        NorthSeekingInitializationStatus north_seeking;
 
         GNSS_STATUS gnss_status;
     };
