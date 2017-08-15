@@ -662,7 +662,7 @@ int Driver::poll()
             processDetailedSatellites(packet, packet + packet_size);
             break;
         default:
-            LOG_ERROR_S << "Ignored message of type " << header.packet_id << std::endl;
+            LOG_ERROR_S << "Ignored message of ID " << static_cast<int>(header.packet_id) << std::endl;
     }
 
     return mLastPackets[header.packet_id];
