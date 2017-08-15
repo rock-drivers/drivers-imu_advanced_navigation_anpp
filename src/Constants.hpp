@@ -25,14 +25,24 @@ namespace imu_advanced_navigation_anpp
 
     enum GNSS_STATUS
     {
-        GNSS_NO_FIX                  = 0x0000,
-        GNSS_2D                      = 0x0010,
-        GNSS_3D                      = 0x0020,
-        GNSS_SBAS                    = 0x0030,
-        GNSS_DGPS                    = 0x0040,
-        GNSS_OMNISTAR                = 0x0050,
-        GNSS_RTK_FLOAT               = 0x0060,
-        GNSS_RTK_FIXED               = 0x0070,
+        GNSS_NO_FIX                     = 0x0000,
+        GNSS_2D                         = 0x0001,
+        GNSS_3D                         = 0x0002,
+        GNSS_SBAS                       = 0x0003,
+        GNSS_DGPS                       = 0x0004,
+        GNSS_OMNISTAR                   = 0x0005,
+        GNSS_RTK_FLOAT                  = 0x0006,
+        GNSS_RTK_FIXED                  = 0x0007
+    };
+
+    enum GNSS_EXTRA_STATUS
+    {
+        GNSS_DOPPLER_VELOCITY_VALID     = 0x0008,
+        GNSS_TIME_VALID                 = 0x0010,
+        GNSS_USING_EXTERNAL             = 0x0020,
+        GNSS_TILT_VALID                 = 0x0040,
+        GNSS_HEADING_VALID              = 0x0080,
+        GNSS_FLOATING_AMBIGUITY_HEADING = 0x0100
     };
 
     enum FILTER_STATUS
@@ -41,8 +51,6 @@ namespace imu_advanced_navigation_anpp
         FILTER_NAVIGATION_INITIALIZED       = 0x0002,
         FILTER_HEADING_INITIALIZED          = 0x0004,
         FILTER_UTC_INITIALIZED              = 0x0008,
-
-        FILTER_GNSS_FIX_STATUS_MASK         = 0x0070,
 
         FILTER_EVENT_1                      = 0x0080,
         FILTER_EVENT_2                      = 0x0100,

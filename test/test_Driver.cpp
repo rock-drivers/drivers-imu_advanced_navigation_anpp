@@ -138,11 +138,11 @@ TEST_F(DriverTest, readStatus_reads_the_system_and_filter_status)
     auto result = driver.readStatus();
 
     ASSERT_EQ(0x0201, result.system_status);
-    ASSERT_TRUE(result.orientation_initialized);
-    ASSERT_TRUE(result.navigation_initialized);
-    ASSERT_FALSE(result.heading_initialized);
-    ASSERT_FALSE(result.utc_initialized);
-    ASSERT_EQ(GNSS_2D, result.gnss_status);
+    ASSERT_TRUE(result.isOrientationInitialized());
+    ASSERT_TRUE(result.isNavigationInitialized());
+    ASSERT_FALSE(result.isHeadingInitialized());
+    ASSERT_FALSE(result.isUTCInitialized());
+    ASSERT_EQ(GNSS_2D, result.gnss_solution_status);
 }
 
 

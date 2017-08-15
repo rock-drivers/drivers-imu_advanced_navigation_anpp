@@ -332,6 +332,8 @@ void Driver::setRawSensorsPeriod(int period)
 void Driver::setGNSSPeriod(int period)
 {
     setPacketPeriod(protocol::RawGNSS::ID, period);
+    if (period == 0)
+        mStatus.gnss_extra_status = 0;
 }
 
 void Driver::setGNSSSatelliteSummaryPeriod(int period)
@@ -525,6 +527,8 @@ void Driver::process(protocol::RawGNSS const& payload)
     mGNSSSolution.deviationLatitude  = payload.lat_lon_z_stddev[0];
     mGNSSSolution.deviationLongitude = payload.lat_lon_z_stddev[1];
     mGNSSSolution.deviationAltitude  = payload.lat_lon_z_stddev[2];
+    
+    mStatus.gnss_extra_status = payload.status;
 }
 
 void Driver::process(protocol::Satellites const& payload)
