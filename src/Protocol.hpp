@@ -1091,7 +1091,7 @@ namespace imu_advanced_navigation_anpp
              */
             uint8_t vehicle_type;
             uint8_t enabled_internal_gnss;
-            uint8_t enabled_dual_antenna_heading;
+            uint8_t reserved_0 = 0;
             uint8_t enabled_atmospheric_altitude;
             uint8_t enabled_velocity_heading;
             uint8_t enabled_reversing_detection;

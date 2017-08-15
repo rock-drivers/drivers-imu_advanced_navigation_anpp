@@ -212,7 +212,6 @@ TEST_F(DriverTest, readConfiguration_queries_the_information_and_returns_the_unm
             conf.gnss_antenna_offset);
     ASSERT_EQ(VEHICLE_3D_UNDERWATER, conf.vehicle_type);
     ASSERT_EQ(true, conf.enabled_internal_gnss);
-    ASSERT_EQ(false, conf.enabled_dual_antenna_heading);
     ASSERT_EQ(true, conf.enabled_atmospheric_altitude);
     ASSERT_EQ(false, conf.enabled_velocity_heading);
     ASSERT_EQ(true, conf.enabled_reversing_detection);
@@ -233,7 +232,6 @@ TEST_F(DriverTest, setConfiguration_applies_the_configuration)
     conf.gnss_antenna_offset = Eigen::Vector3d(TEST_FP4[0].fp, TEST_FP4[1].fp, TEST_FP4[2].fp);
     conf.vehicle_type                 = VEHICLE_3D_UNDERWATER;
     conf.enabled_internal_gnss        = true;
-    conf.enabled_dual_antenna_heading = false;
     conf.enabled_atmospheric_altitude = true;
     conf.enabled_velocity_heading     = false;
     conf.enabled_reversing_detection  = true;

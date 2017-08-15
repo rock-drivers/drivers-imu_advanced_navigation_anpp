@@ -16,7 +16,6 @@ namespace imu_advanced_navigation_anpp
 
         VEHICLE_TYPES vehicle_type;
         bool enabled_internal_gnss;
-        bool enabled_dual_antenna_heading;
         bool enabled_atmospheric_altitude;
         bool enabled_velocity_heading;
         bool enabled_reversing_detection;

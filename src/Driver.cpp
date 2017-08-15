@@ -132,7 +132,6 @@ CurrentConfiguration Driver::readConfiguration()
 
     result.vehicle_type                 = static_cast<VEHICLE_TYPES>(filter_options.vehicle_type);
     result.enabled_internal_gnss        = filter_options.enabled_internal_gnss != 0;
-    result.enabled_dual_antenna_heading = filter_options.enabled_dual_antenna_heading != 0;
     result.enabled_atmospheric_altitude = filter_options.enabled_atmospheric_altitude != 0;
     result.enabled_velocity_heading     = filter_options.enabled_velocity_heading != 0;
     result.enabled_reversing_detection  = filter_options.enabled_reversing_detection != 0;
@@ -173,7 +172,6 @@ void Driver::setConfiguration(Configuration const& conf)
     filter_options.permanent = 0;
     filter_options.vehicle_type                 = static_cast<VEHICLE_TYPES>(conf.vehicle_type);
     filter_options.enabled_internal_gnss        = conf.enabled_internal_gnss ? 1 : 0;
-    filter_options.enabled_dual_antenna_heading = conf.enabled_dual_antenna_heading ? 1 : 0;
     filter_options.enabled_atmospheric_altitude = conf.enabled_atmospheric_altitude ? 1 : 0;
     filter_options.enabled_velocity_heading     = conf.enabled_velocity_heading ? 1 : 0;
     filter_options.enabled_reversing_detection  = conf.enabled_reversing_detection ? 1 : 0;
