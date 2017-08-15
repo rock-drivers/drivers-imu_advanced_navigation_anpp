@@ -355,6 +355,8 @@ void Driver::setGNSSSatelliteSummaryPeriod(int period)
 void Driver::setGNSSSatelliteDetailsPeriod(int period)
 {
     setPacketPeriod(protocol::DetailedSatellites::ID, period);
+    if (period == 0)
+        mGNSSSatelliteInfo.knownSatellites.clear();
 }
 
 void Driver::setNorthSeekingInitializationStatusPeriod(int period)
