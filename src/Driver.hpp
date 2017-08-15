@@ -100,6 +100,13 @@ namespace imu_advanced_navigation_anpp
 
         void openURI(std::string const& uri);
 
+        /** Change the device's baudrate
+         *
+         * After this call, the driver is effectively unusable. You must close
+         * it and re-open with a new URI
+         */
+        void setDeviceBaudrate(uint32_t rate);
+
         /** Whether timestamping is using the device's time
          *
          * Use this if the device is synchronized with UTC (e.g. using a

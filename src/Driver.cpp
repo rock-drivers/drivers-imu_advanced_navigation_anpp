@@ -29,6 +29,17 @@ void Driver::openURI(std::string const& uri)
     clearPeriodicPackets();
 }
 
+void Driver::setDeviceBaudrate(uint32_t rate)
+{
+    // First read the current configuration to not change the GPIO and
+    // secondary rates
+    auto current = protocol::query<protocol::BaudRates>(*this);
+    current.permanent = 1;
+    current.primary_port = rate;
+    auto header = protocol::writePacket(*this, current);
+    protocol::validateAck(*this, header, getReadTimeout());
+}
+
 void Driver::setUseDeviceTime(bool enable)
 {
     int period = enable;
