@@ -47,20 +47,20 @@ namespace imu_advanced_navigation_anpp
 
     enum FILTER_STATUS
     {
-        FILTER_ORIENTATION_INITIALIZED      = 0x0001,
-        FILTER_NAVIGATION_INITIALIZED       = 0x0002,
-        FILTER_HEADING_INITIALIZED          = 0x0004,
-        FILTER_UTC_INITIALIZED              = 0x0008,
+        FILTER_ORIENTATION_INITIALIZED                  = 0x0001,
+        FILTER_NAVIGATION_INITIALIZED                   = 0x0002,
+        FILTER_HEADING_INITIALIZED                      = 0x0004,
+        FILTER_UTC_INITIALIZED                          = 0x0008,
 
-        FILTER_EVENT_1                      = 0x0080,
-        FILTER_EVENT_2                      = 0x0100,
-        FILTER_INTERNAL_GNSS_ENABLED        = 0x0200,
-        FILTER_MAGNETIC_HEADING_ENABLED     = 0x0400,
-        FILTER_VELOCITY_HEADING_ENABLED     = 0x0800,
-        FILTER_ATMOSPHERIC_ALTITUDE_ENABLED = 0x1000,
-        FILTER_EXTERNAL_POSITION_ACTIVE     = 0x2000,
-        FILTER_EXTERNAL_VELOCITY_ACTIVE     = 0x4000,
-        FILTER_EXTERNAL_HEADING_ACTIVE      = 0x8000,
+        FILTER_EVENT_1                                  = 0x0080,
+        FILTER_EVENT_2                                  = 0x0100,
+        FILTER_INTERNAL_GNSS_ENABLED                    = 0x0200,
+        FILTER_MAGNETIC_OR_DUAL_ANTENNA_HEADING_ENABLED = 0x0400,
+        FILTER_VELOCITY_HEADING_ENABLED                 = 0x0800,
+        FILTER_ATMOSPHERIC_ALTITUDE_ENABLED             = 0x1000,
+        FILTER_EXTERNAL_POSITION_ACTIVE                 = 0x2000,
+        FILTER_EXTERNAL_VELOCITY_ACTIVE                 = 0x4000,
+        FILTER_EXTERNAL_HEADING_ACTIVE                  = 0x8000,
     };
 
     enum VEHICLE_TYPES
