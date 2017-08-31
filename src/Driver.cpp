@@ -434,11 +434,11 @@ void Driver::process(protocol::EulerOrientationStandardDeviation const& payload)
 {
     mWorld.time = mCurrentTimestamp;
 
-    Eigen::Matrix3d ned_cov = Eigen::Matrix3d::Zero();
-    ned_cov(0, 0) = payload.rpy[0] * payload.rpy[0];
-    ned_cov(1, 1) = payload.rpy[1] * payload.rpy[1];
-    ned_cov(2, 2) = payload.rpy[2] * payload.rpy[2];
-    mWorld.cov_orientation = ned2nwu * may_invalidate(ned_cov);
+    Eigen::Matrix3d cov = Eigen::Matrix3d::Zero();
+    cov(0, 0) = payload.rpy[0] * payload.rpy[0];
+    cov(1, 1) = payload.rpy[1] * payload.rpy[1];
+    cov(2, 2) = payload.rpy[2] * payload.rpy[2];
+    mWorld.cov_orientation = may_invalidate(cov);
 }
 
 void Driver::process(protocol::NEDVelocity const& payload)
