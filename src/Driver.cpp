@@ -149,26 +149,38 @@ CurrentConfiguration Driver::readConfiguration()
 
 void Driver::setConfiguration(Configuration const& conf)
 {
+    Header header;
+
     protocol::PacketTimerPeriod packet_timer_period;
+    memset(&packet_timer_period, 0, sizeof(packet_timer_period));
     packet_timer_period.permanent = 0;
     packet_timer_period.utc_synchronization = conf.utc_synchronization ? 1 : 0;
     packet_timer_period.period = conf.packet_timer_period.toMicroseconds();
-    Header header = protocol::writePacket(*this, packet_timer_period);
+    header = protocol::writePacket(*this, packet_timer_period);
     protocol::validateAck(*this, header, getReadTimeout());
 
-    protocol::Alignment alignment;
-    alignment.permanent = 0;
-    std::fill_n(alignment.dcm, 9, 0);
-    alignment.dcm[0] = 1;
-    alignment.dcm[4] = 1;
-    alignment.dcm[8] = 1;
-    std::copy_n(conf.gnss_antenna_offset.data(), 3, alignment.gnss_antenna_offset_xyz);
-    std::fill_n(alignment.odometer_offset_xyz, 3, 0);
-    std::fill_n(alignment.external_data_offset_xyz, 3, 0);
-    header = protocol::writePacket(*this, alignment);
-    protocol::validateAck(*this, header, getReadTimeout());
+    if (conf.gnss_antenna_offset != Eigen::Vector3d::Zero())
+    {
+        // There's a bug in the current Motus firmware that disables heading
+        // estimation in some conditions if the alignment packet is sent.
+        //
+        // Send it only if needed, and warn the user about it
+        LOG_WARN_S << "There's a bug at least in some Motus firmwares, that disables heading estimation" << endl;
+        LOG_WARN_S << "if the alignment feature is used (in this case, because you gave a non-zero GNSS antenna offset" << endl;
+        LOG_WARN_S << "Make sure you have a usable firmware, or set the GNSS antenna offset to zero" << endl;
+        protocol::Alignment alignment;
+        memset(&alignment, 0, sizeof(alignment));
+        alignment.permanent = 0;
+        alignment.dcm[0] = 1;
+        alignment.dcm[4] = 1;
+        alignment.dcm[8] = 1;
+        std::copy_n(conf.gnss_antenna_offset.data(), 3, alignment.gnss_antenna_offset_xyz);
+        header = protocol::writePacket(*this, alignment);
+        protocol::validateAck(*this, header, getReadTimeout());
+    }
 
     protocol::FilterOptions filter_options;
+    memset(&filter_options, 0, sizeof(filter_options));
     filter_options.permanent = 0;
     filter_options.vehicle_type                 = static_cast<VEHICLE_TYPES>(conf.vehicle_type);
     filter_options.enabled_internal_gnss        = conf.enabled_internal_gnss ? 1 : 0;
