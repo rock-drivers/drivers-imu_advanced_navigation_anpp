@@ -1,7 +1,10 @@
-rock_library(drivers-advanced_navigation_anpp
-    SOURCES Dummy.cpp
-    HEADERS Dummy.hpp)
+rock_library(imu_advanced_navigation_anpp
+    SOURCES Protocol.cpp Driver.cpp Exceptions.cpp
+    HEADERS Protocol.hpp Driver.hpp Exceptions.hpp Constants.hpp
+    DeviceInformation.hpp Status.hpp Configuration.hpp CurrentConfiguration.hpp
+    NorthSeekingInitializationStatus.hpp
+    DEPS_PKGCONFIG iodrivers_base base-types gps_base)
 
-rock_executable(drivers-advanced_navigation_anpp_bin Main.cpp
-    DEPS drivers-advanced_navigation_anpp)
+rock_executable(imu_advanced_navigation_anpp_ctl Main.cpp
+    DEPS imu_advanced_navigation_anpp)
 

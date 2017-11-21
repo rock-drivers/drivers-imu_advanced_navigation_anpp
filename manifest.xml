@@ -1,17 +1,13 @@
 <package>
   <description brief="Driver for devices that use Advanced Navigation's ANPP protocol">
-  
   </description>
-  <author>/</author>
-  <license></license>
-  <url>http://</url>
-  <logo>http://</logo>
+  <author>Sylvain Joyeux/sylvain.joyeux@13robotics.com</author>
+  <license>LGPLv2+</license>
+
   <depend package="base/cmake" />
-  <!--
-   To add any dependencies use the depend tag
-  <depend package="dummy-dependency-0" />
-	...
-  <depend package="dummy-dependency-n-1" />
-  <depend package="dummy-dependency-n" />
-  -->
+  <depend package="drivers/iodrivers_base" />
+  <depend package="drivers/gps_base" />
+
+  <test_depend package="libgtest-dev" />
+  <test_depend package="google-mock" />
 </package>

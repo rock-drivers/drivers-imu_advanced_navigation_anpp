@@ -1,0 +1,110 @@
+#ifndef ADVANCED_NAVIGATION_ANPP_CONSTANTS_HPP
+#define ADVANCED_NAVIGATION_ANPP_CONSTANTS_HPP
+
+namespace imu_advanced_navigation_anpp
+{
+    enum SYSTEM_STATUS
+    {
+        SYSTEM_FAILURE                    = 0x0001,
+        SYSTEM_ACCELEROMETER_FAILURE      = 0x0002,
+        SYSTEM_GYROSCOPE_FAILURE          = 0x0004,
+        SYSTEM_MAGNETOMETER_FAILURE       = 0x0008,
+        SYSTEM_PRESSURE_SENSOR_FAILURE    = 0x0010,
+        SYSTEM_GNSS_SENSOR_FAILURE        = 0x0020,
+        SYSTEM_ACCELEROMETER_OVER_RANGE   = 0x0040,
+        SYSTEM_GYROSCOPE_OVER_RANGE       = 0x0080,
+        SYSTEM_MAGNETOMETER_OVER_RANGE    = 0x0100,
+        SYSTEM_PRESSURE_SENSOR_OVER_RANGE = 0x0200,
+        SYSTEM_MIN_TEMPERATURE_ALARM      = 0x0400,
+        SYSTEM_MAX_TEMPERATURE_ALARM      = 0x0800,
+        SYSTEM_LOW_VOLTAGE_ALARM          = 0x1000,
+        SYSTEM_HIGH_VOLTAGE_ALARM         = 0x2000,
+        SYSTEM_GNSS_ANTENNA_DISCONNECTED  = 0x4000,
+        SYSTEM_DATA_OUTPUT_OVERFLOW_ALARM = 0x8000
+    };
+
+    enum GNSS_STATUS
+    {
+        GNSS_NO_FIX                     = 0x0000,
+        GNSS_2D                         = 0x0001,
+        GNSS_3D                         = 0x0002,
+        GNSS_SBAS                       = 0x0003,
+        GNSS_DGPS                       = 0x0004,
+        GNSS_OMNISTAR                   = 0x0005,
+        GNSS_RTK_FLOAT                  = 0x0006,
+        GNSS_RTK_FIXED                  = 0x0007
+    };
+
+    enum GNSS_EXTRA_STATUS
+    {
+        GNSS_DOPPLER_VELOCITY_VALID     = 0x0008,
+        GNSS_TIME_VALID                 = 0x0010,
+        GNSS_USING_EXTERNAL             = 0x0020,
+        GNSS_TILT_VALID                 = 0x0040,
+        GNSS_HEADING_VALID              = 0x0080,
+        GNSS_FLOATING_AMBIGUITY_HEADING = 0x0100
+    };
+
+    enum FILTER_STATUS
+    {
+        FILTER_ORIENTATION_INITIALIZED                  = 0x0001,
+        FILTER_NAVIGATION_INITIALIZED                   = 0x0002,
+        FILTER_HEADING_INITIALIZED                      = 0x0004,
+        FILTER_UTC_INITIALIZED                          = 0x0008,
+
+        FILTER_EVENT_1                                  = 0x0080,
+        FILTER_EVENT_2                                  = 0x0100,
+        FILTER_INTERNAL_GNSS_ENABLED                    = 0x0200,
+        FILTER_MAGNETIC_OR_DUAL_ANTENNA_HEADING_ENABLED = 0x0400,
+        FILTER_VELOCITY_HEADING_ENABLED                 = 0x0800,
+        FILTER_ATMOSPHERIC_ALTITUDE_ENABLED             = 0x1000,
+        FILTER_EXTERNAL_POSITION_ACTIVE                 = 0x2000,
+        FILTER_EXTERNAL_VELOCITY_ACTIVE                 = 0x4000,
+        FILTER_EXTERNAL_HEADING_ACTIVE                  = 0x8000,
+    };
+
+    enum VEHICLE_TYPES
+    {
+        VEHICLE_UNCONSTRAINED         = 0,
+        VEHICLE_BICYCLE_OR_MOTORCYCLE = 1,
+        VEHICLE_CAR                   = 2,
+        VEHICLE_HOVERCRAFT            = 3,
+        VEHICLE_SUBMARINE             = 4,
+        VEHICLE_3D_UNDERWATER         = 5,
+        VEHICLE_FIXED_WING_PLANE      = 6,
+        VEHICLE_3D_AIRCRAFT           = 7,
+        VEHICLE_HUMAN                 = 8,
+        VEHICLE_BOAT                  = 9,
+        VEHICLE_LARGE_SHIP            = 10,
+        VEHICLE_STATIONARY            = 11,
+        VEHICLE_STUNT_PLANE           = 12,
+        VEHICLE_RACE_CAR              = 13
+    };
+
+    enum MAGNETIC_CALIBRATION_STATUS
+    {
+        MAGNETIC_CALIBRATION_NOT_COMPLETED,
+        MAGNETIC_CALIBRATION_2D_COMPLETED,
+        MAGNETIC_CALIBRATION_3D_COMPLETED,
+        MAGNETIC_CALIBRATION_CUSTOM_COMPLETED,
+        MAGNETIC_CALIBRATION_2D_IN_PROGRESS,
+        MAGNETIC_CALIBRATION_3D_IN_PROGRESS,
+        MAGNETIC_CALIBRATION_ERROR_2D_EXCESSIVE_ROLL,
+        MAGNETIC_CALIBRATION_ERROR_2D_EXCESSIVE_PITCH,
+        MAGNETIC_CALIBRATION_ERROR_SENSOR_OVER_RANGE,
+        MAGNETIC_CALIBRATION_ERROR_SENSOR_TIME_OUT,
+        MAGNETIC_CALIBRATION_ERROR_SENSOR_SYSTEM_ERROR,
+        MAGNETIC_CALIBRATION_ERROR_SENSOR_INTERFERENCE_ERROR
+    };
+
+    enum NORTH_SEEKING_INITIALIZATION_FLAGS
+    {
+        NORTH_SEEKING_INITIALIZATION_COMPLETE    = 0x1,
+        NORTH_SEEKING_STOPPED_POSITION_UNKNOWN   = 0x2,
+        NORTH_SEEKING_STOPPED_EXCESSIVE_ROLLING  = 0x4,
+        NORTH_SEEKING_STOPPED_EXCESSIVE_PITCHING = 0x8,
+        NORTH_SEEKING_STOPPED_EXCESSIVE_MOVEMENT = 0xF
+    };
+}
+
+#endif
