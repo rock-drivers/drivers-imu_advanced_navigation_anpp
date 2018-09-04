@@ -1,6 +1,7 @@
 #ifndef ADVANCED_NAVIGATION_ANPP_HEADER_HPP
 #define ADVANCED_NAVIGATION_ANPP_HEADER_HPP
 
+#include <vector>
 #include <cstdint>
 #include <algorithm>
 #include <stdexcept>
