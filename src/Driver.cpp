@@ -544,8 +544,8 @@ void Driver::process(protocol::RawGNSS const& payload)
             static_cast<uint64_t>(payload.unix_time_seconds) * base::Time::UsecPerSec +
             static_cast<uint64_t>(payload.unix_time_microseconds));
     mGNSSSolution.positionType = gnss_status_anpp2gps_base(payload.status);
-    mGNSSSolution.latitude  = payload.lat_lon_z[0];
-    mGNSSSolution.longitude = payload.lat_lon_z[1];
+    mGNSSSolution.latitude  = payload.lat_lon_z[0] * 180 / M_PI;
+    mGNSSSolution.longitude = payload.lat_lon_z[1] * 180 / M_PI;
     mGNSSSolution.altitude = payload.lat_lon_z[2];
     mGNSSSolution.deviationLatitude  = payload.lat_lon_z_stddev[0];
     mGNSSSolution.deviationLongitude = payload.lat_lon_z_stddev[1];
@@ -574,8 +574,8 @@ void Driver::process(protocol::GeodeticPosition const& payload)
     pos = may_invalidate(pos);
 
     mGeodeticPosition.time = mCurrentTimestamp;
-    mGeodeticPosition.latitude  = pos.x();
-    mGeodeticPosition.longitude = pos.y();
+    mGeodeticPosition.latitude  = pos.x() * 180 / M_PI;
+    mGeodeticPosition.longitude = pos.y() * 180 / M_PI;
     mGeodeticPosition.altitude  = pos.z();
 
     mWorld.time         = mGeodeticPosition.time;
